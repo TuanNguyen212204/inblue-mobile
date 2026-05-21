@@ -6,6 +6,7 @@ import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_models.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_setup_notifier.dart';
+import 'package:inblue_mobile/features/ai_interview/presentation/widgets/setup_profile_step.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
 
 class AiInterviewSetupPage extends ConsumerWidget {
@@ -31,7 +32,7 @@ class AiInterviewSetupPage extends ConsumerWidget {
                 duration: const Duration(milliseconds: 320),
                 child: switch (state.step) {
                   0 => _StepConfig(key: const ValueKey(0), state: state),
-                  1 => _StepProfile(key: const ValueKey(1)),
+                  1 => const SetupProfileStep(key: ValueKey(1)),
                   _ => _StepJd(key: const ValueKey(2), state: state),
                 },
               ),
@@ -82,6 +83,15 @@ class AiInterviewSetupPage extends ConsumerWidget {
       return;
     }
     if (state.step == 1) {
+      if (!state.step2Valid) {
+        _toast(
+          context,
+          state.isEditingProfile
+              ? 'Vui lòng lưu hồ sơ trước khi tiếp tục'
+              : 'Vui lòng tải CV hoặc tạo hồ sơ ứng viên',
+        );
+        return;
+      }
       notifier.setStep(2);
       return;
     }
@@ -225,28 +235,6 @@ class _OptionSection extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
       ],
-    );
-  }
-}
-
-class _StepProfile extends StatelessWidget {
-  const _StepProfile({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Hồ sơ ứng viên'),
-          SizedBox(height: AppSpacing.sm),
-          Text(
-            'Upload CV PDF và hoàn thiện profile trên bước tiếp theo. '
-            'Tạm thời dùng profile mặc định để bắt đầu phỏng vấn.',
-          ),
-        ],
-      ),
     );
   }
 }
