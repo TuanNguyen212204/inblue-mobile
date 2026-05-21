@@ -69,6 +69,31 @@ class AiInterviewRemoteDataSource {
     return QuestionResponse.fromJson(res.data ?? {});
   }
 
+  Future<List<Map<String, dynamic>>> getPracticeSetsByInterview(int sessionId) async {
+    final res = await _dio.get<List<dynamic>>(
+      ApiPaths.practiceSetsByInterview(sessionId),
+    );
+    return (res.data ?? []).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> createPracticeSetByAi({
+    required int aiInterviewId,
+    required int dateNumber,
+  }) async {
+    try {
+      final res = await _dio.post<List<dynamic>>(
+        ApiPaths.practiceSetCreateByAi,
+        data: {
+          'aiInterviewId': aiInterviewId,
+          'dateNumber': dateNumber,
+        },
+      );
+      return (res.data ?? []).cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw Exception(ErrorNormalizer.fromDio(e));
+    }
+  }
+
   Future<QuestionResponse> submitAnswer({
     required String sessionKey,
     required String answer,

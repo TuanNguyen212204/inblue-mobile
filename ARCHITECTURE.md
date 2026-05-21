@@ -132,4 +132,4 @@ Chi tiết: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 8. Tham chiếu triển khai
 
-Chi tiết API, UI spec, kiosk mode: [INBLUE_MOBILE_GUIDE.md](INBLUE_MOBILE_GUIDE.md).
+Chi tiết API, UI spec, kiosk mode: file local `INBLUE_MOBILE_GUIDE.md` (gitignored — không push remote).
