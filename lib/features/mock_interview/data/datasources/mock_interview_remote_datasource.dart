@@ -1,0 +1,119 @@
+import 'package:dio/dio.dart';
+import 'package:inblue_mobile/core/constants/api_paths.dart';
+import 'package:inblue_mobile/features/mock_interview/domain/entities/mentor.dart';
+import 'package:inblue_mobile/features/mock_interview/domain/entities/mock_session.dart';
+
+class MockInterviewRemoteDataSource {
+  MockInterviewRemoteDataSource(this._dio);
+
+  final Dio _dio;
+
+  Future<List<Mentor>> getMentors() async {
+    final res = await _dio.get<List<dynamic>>(ApiPaths.mentors);
+    return (res.data ?? [])
+        .map((e) => Mentor.fromJson(e as Map<String, dynamic>))
+        .where((m) => m.active != false)
+        .toList();
+  }
+
+  Future<Mentor> getMentor(int id) async {
+    final res = await _dio.get<Map<String, dynamic>>(ApiPaths.mentorById(id));
+    return Mentor.fromJson(res.data ?? {});
+  }
+
+  Future<List<MockSession>> getSessionsByUser(int userId) async {
+    final res = await _dio.get<List<dynamic>>(ApiPaths.sessionsByUser(userId));
+    return (res.data ?? [])
+        .map((e) => MockSession.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<MockSession> getSession(int id) async {
+    final res = await _dio.get<Map<String, dynamic>>(ApiPaths.sessionById(id));
+    return MockSession.fromJson(res.data ?? {});
+  }
+
+  Future<MockSession> createSession(Map<String, dynamic> body) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      ApiPaths.sessionCreate,
+      data: body,
+    );
+    return MockSession.fromJson(res.data ?? {});
+  }
+
+  Future<String> makePayment(int sessionId) async {
+    final res = await _dio.get<dynamic>(
+      ApiPaths.sessionMakePayment,
+      queryParameters: {'sessionId': sessionId},
+    );
+    return _extractPaymentUrl(res.data);
+  }
+
+  Future<void> transferOut({
+    required int amount,
+    required int userId,
+  }) async {
+    await _dio.post<dynamic>(
+      ApiPaths.transactionTransferOut,
+      queryParameters: {
+        'amount': amount,
+        'userId': userId,
+        'paymentPurpose': 'MENTOR_INTERVIEW',
+      },
+    );
+  }
+
+  Future<MockSession> updateSession(Map<String, dynamic> body) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      ApiPaths.sessionUpdate,
+      data: body,
+    );
+    return MockSession.fromJson(res.data ?? {});
+  }
+
+  Future<void> joinSession({
+    required String sessionName,
+    required int userId,
+    required String participantId,
+    required bool isMentor,
+  }) async {
+    await _dio.post<dynamic>(
+      ApiPaths.sessionJoin,
+      data: {
+        'sessionName': sessionName,
+        'userId': userId,
+        'participantId': participantId,
+        'isMentor': isMentor,
+      },
+    );
+  }
+
+  Future<void> createMentorFeedback(Map<String, dynamic> body) async {
+    await _dio.post<dynamic>(ApiPaths.mentorFeedbacks, data: body);
+  }
+
+  String _extractPaymentUrl(dynamic data) {
+    if (data is String && data.startsWith('http')) return data;
+    if (data is Map) {
+      for (final key in [
+        'checkoutUrl',
+        'paymentUrl',
+        'redirectUrl',
+        'link',
+        'url',
+      ]) {
+        final v = data[key];
+        if (v is String && v.startsWith('http')) return v;
+      }
+      final nested = data['data'];
+      if (nested is Map) return _extractPaymentUrl(nested);
+    }
+    throw Exception('Không lấy được URL thanh toán');
+  }
+}
+
+String normalizeRoomUrl(String? url) {
+  if (url == null || url.isEmpty) return '';
+  if (url.startsWith('http')) return url;
+  return 'https://$url';
+}
