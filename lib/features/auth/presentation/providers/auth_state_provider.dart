@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inblue_mobile/features/auth/presentation/providers/auth_token_provider.dart';
+import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
 
 class AuthState {
   const AuthState({required this.isAuthenticated});
@@ -8,6 +8,8 @@ class AuthState {
 }
 
 final authStateProvider = Provider<AuthState>((ref) {
-  final token = ref.watch(authTokenProvider);
-  return AuthState(isAuthenticated: token != null && token.isNotEmpty);
+  final session = ref.watch(authNotifierProvider).valueOrNull;
+  return AuthState(
+    isAuthenticated: session != null && session.isLoggedIn && !session.isExpired,
+  );
 });

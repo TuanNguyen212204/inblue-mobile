@@ -35,7 +35,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final jwt = await _secureStorage.readJwt();
     if (jwt == null) return right(null);
     // TODO: decode JWT or fetch /me when BE exposes profile endpoint
-    return right(const AuthUser(id: '0', email: ''));
+    return right(const AuthUser(id: 0, email: ''));
   }
 
   @override

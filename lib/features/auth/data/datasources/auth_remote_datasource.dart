@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:inblue_mobile/core/constants/api_paths.dart';
 import 'package:inblue_mobile/core/errors/exceptions.dart';
+import 'package:inblue_mobile/core/network/error_normalizer.dart';
 
 abstract interface class AuthRemoteDataSource {
   Future<String> login({required String email, required String password});
@@ -28,7 +29,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (e.response?.statusCode == 401) {
         throw const UnauthorizedException();
       }
-      throw NetworkException(e.message ?? 'Network error', cause: e);
+      throw NetworkException(ErrorNormalizer.fromDio(e), cause: e);
     }
   }
 }
