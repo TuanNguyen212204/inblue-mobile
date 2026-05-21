@@ -1,0 +1,28 @@
+# <type>(<scope>): <short summary>
+# |<----  Using a Maximum Of 72 Characters  ---->|
+
+# Explain why this change is made (not only what).
+# Wrap at 72 characters.
+
+# --- Types (Conventional Commits) ---
+# feat     — new feature
+# fix      — bug fix
+# refactor — code change without feature/fix
+# docs     — documentation only
+# style    — formatting, no logic change
+# test     — add or update tests
+# chore    — tooling, deps, CI
+# perf     — performance improvement
+# ci       — CI/CD changes
+# build    — build system / external deps
+
+# --- Scopes (examples) ---
+# core, design-system, auth, ai-interview, mock-interview,
+# dashboard, notifications, profile, router, network, storage
+
+# --- Footer ---
+# BREAKING CHANGE: describe migration steps
+# Closes #123
+
+# Example:
+# feat(ai-interview): add session result screen scaffold

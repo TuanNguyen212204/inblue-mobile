@@ -1,0 +1,34 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Dart / Flutter source
+*.dart linguist-language=Dart
+*.yaml linguist-language=YAML
+*.yml linguist-language=YAML
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.riv binary
+*.json linguist-generated=false
+
+# Shell scripts
+*.sh text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Gradle
+*.gradle text
+*.gradle.kts text
+*.properties text
+
+# Lock files — do not diff
+pubspec.lock linguist-generated=true
