@@ -1,0 +1,17 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inblue_mobile/core/network/dio_client.dart';
+import 'package:inblue_mobile/core/storage/secure_storage_service.dart';
+import 'package:inblue_mobile/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:inblue_mobile/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:inblue_mobile/features/auth/domain/repositories/auth_repository.dart';
+
+final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
+  return AuthRemoteDataSourceImpl(ref.watch(dioProvider));
+});
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepositoryImpl(
+    remote: ref.watch(authRemoteDataSourceProvider),
+    secureStorage: ref.watch(secureStorageProvider),
+  );
+});
