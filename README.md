@@ -23,7 +23,8 @@ flutter run
 |-----|-------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Folder structure, layers, stack |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Git workflow, Conventional Commits |
-| [INBLUE_MOBILE_GUIDE.md](INBLUE_MOBILE_GUIDE.md) | API/UI parity with web |
+
+> API/UI parity notes live in local `INBLUE_MOBILE_GUIDE.md` (gitignored, not on remote).
 
 ## Project structure (summary)
 

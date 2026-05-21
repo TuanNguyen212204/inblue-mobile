@@ -76,3 +76,20 @@ test-results/
 
 # FVM
 .fvm/
+
+# Private / local-only (do not push to remote)
+INBLUE_MOBILE_GUIDE.md
+AGENT_CHAT_PROMPT.md
+docs/private/
+*.local.md
+.local/
+
+# IDE / Cursor (local agent config)
+.cursor/
+.agent/
+
+# OS / editor junk
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak
