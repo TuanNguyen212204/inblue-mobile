@@ -25,5 +25,11 @@ class SecureStorageService {
   Future<void> writeAuthPayload(String json) =>
       _storage.write(key: _kAuthPayloadKey, value: json);
 
-  Future<void> clearAll() => _storage.deleteAll();
+  /// Explicit key deletion — more reliable than [deleteAll] on some Android builds.
+  Future<void> clearAll() async {
+    await Future.wait([
+      deleteJwt(),
+      _storage.delete(key: _kAuthPayloadKey),
+    ]);
+  }
 }

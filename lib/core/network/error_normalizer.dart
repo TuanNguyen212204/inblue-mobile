@@ -67,4 +67,11 @@ abstract final class ErrorNormalizer {
         lower.contains('expired') ||
         lower.contains('404');
   }
+
+  static String interviewSessionExpiredMessage =
+      'Phiên đã hết hạn sau 1 giờ không hoạt động.';
+
+  static String mapInterviewError(String message) {
+    return _mapContentPattern(message) ?? message;
+  }
 }

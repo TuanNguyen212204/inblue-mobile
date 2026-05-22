@@ -7,6 +7,7 @@ import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interv
 import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_room_page.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_setup_page.dart';
 import 'package:inblue_mobile/features/auth/presentation/pages/login_page.dart';
+import 'package:inblue_mobile/core/router/router_refresh_provider.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_state_provider.dart'
     show isAuthenticatedProvider;
 import 'package:inblue_mobile/features/dashboard/presentation/pages/user_dashboard_page.dart';
@@ -28,20 +29,21 @@ final _shellNavigatorProfileKey = GlobalKey<NavigatorState>(debugLabel: 'shellPr
 Page<void> _noTransitionPage(Widget child) => NoTransitionPage(child: child);
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // Only login/logout may recreate the router — not profile field updates.
-  final isLoggedIn = ref.watch(isAuthenticatedProvider);
+  final refresh = ref.watch(routerRefreshNotifierProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: RoutePaths.splash,
     debugLogDiagnostics: true,
+    refreshListenable: refresh,
     redirect: (context, state) {
+      final isLoggedIn = ref.read(isAuthenticatedProvider);
       final isLoginRoute = state.matchedLocation == RoutePaths.login;
       final loc = state.matchedLocation;
 
       if (!isLoggedIn && !isLoginRoute) return RoutePaths.login;
       if (isLoggedIn && (isLoginRoute || loc == RoutePaths.splash)) {
-        return RoutePaths.dashboard;
+        return RoutePaths.aiInterviewList;
       }
       return null;
     },

@@ -91,10 +91,18 @@ class AiInterviewRoomNotifier
         await prefs.setInt('interview-session-id-$sessionKey', dbId);
       }
     } catch (e) {
-      state = state.copyWith(
-        phase: AiRoomPhase.error,
-        errorMessage: e.toString(),
-      );
+      final msg = e.toString();
+      if (ErrorNormalizer.isSessionExpiredError(msg)) {
+        state = state.copyWith(
+          phase: AiRoomPhase.expired,
+          errorMessage: ErrorNormalizer.interviewSessionExpiredMessage,
+        );
+      } else {
+        state = state.copyWith(
+          phase: AiRoomPhase.error,
+          errorMessage: msg,
+        );
+      }
     }
   }
 

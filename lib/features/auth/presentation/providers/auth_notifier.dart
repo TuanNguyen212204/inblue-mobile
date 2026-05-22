@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:inblue_mobile/core/storage/interview_session_storage.dart';
 import 'package:inblue_mobile/core/storage/secure_storage_service.dart';
+import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_list_notifier.dart';
 import 'package:inblue_mobile/features/auth/domain/entities/auth_session.dart';
 import 'package:inblue_mobile/features/auth/domain/entities/auth_user.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_providers.dart';
@@ -69,6 +71,7 @@ class AuthNotifier extends AsyncNotifier<AuthSession?> {
   Future<void> logout() async {
     await _clear();
     state = const AsyncData(null);
+    ref.invalidate(aiInterviewListNotifierProvider);
   }
 
   AuthSession _sessionFromToken(String token) {
@@ -119,6 +122,7 @@ class AuthNotifier extends AsyncNotifier<AuthSession?> {
 
   Future<void> _clear() async {
     await ref.read(secureStorageProvider).clearAll();
+    await InterviewSessionStorage.clearAll();
     ref.read(authTokenProvider.notifier).state = null;
   }
 }

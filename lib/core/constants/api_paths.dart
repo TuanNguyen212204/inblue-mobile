@@ -3,10 +3,26 @@ abstract final class ApiPaths {
   // Auth
   static const authLogin = '/api/auth/login';
 
-  // Users
+  // Users & account
+  static String userById(int userId) => '/api/users/find-by-id/$userId';
+  static String userDetail(int userId) => '/api/users/$userId';
+  static const userUpdate = '/api/users';
+  static const userPassword = '/api/users/password';
   static String userSubscription(int userId) =>
       '/api/users/$userId/subscription';
-  static String userById(int userId) => '/api/users/find-by-id/$userId';
+  static String userSubscribe(int userId, int planId) =>
+      '/api/users/subscribe?userId=$userId&planId=$planId';
+
+  // Wallet & transactions
+  static String transactionsByUser(int userId) =>
+      '/api/transactions/user/$userId';
+  static String transactionTransferIn(int amount, int userId) =>
+      '/api/transactions/transfer-in?amount=$amount&userId=$userId';
+
+  // Membership & payments
+  static const membershipPlans = '/api/membership-plans';
+  static String paymentPay(int amount, int userId) =>
+      '/api/payments/pay?amount=$amount&userId=$userId';
 
   // AI Interview
   static const interviewConfigOptions = '/api/interview-sessions/config-options';

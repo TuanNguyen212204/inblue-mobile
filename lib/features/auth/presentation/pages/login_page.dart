@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/config/app_config.dart';
-import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/components/app_gradient_mesh_background.dart';
 import 'package:inblue_mobile/design_system/components/app_premium_text_field.dart';
@@ -47,9 +45,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
       return;
     }
-    if (ref.read(authNotifierProvider).valueOrNull != null) {
-      context.go(RoutePaths.dashboard);
-    }
+    // Navigation handled by GoRouter redirect after auth state updates.
   }
 
   @override

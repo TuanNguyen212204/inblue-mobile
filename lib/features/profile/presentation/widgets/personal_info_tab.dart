@@ -1,0 +1,311 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
+import 'package:inblue_mobile/design_system/components/app_premium_text_field.dart';
+import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
+import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
+import 'package:inblue_mobile/features/profile/domain/entities/user_account.dart';
+import 'package:inblue_mobile/features/profile/presentation/providers/account_notifier.dart';
+import 'package:inblue_mobile/features/profile/presentation/utils/profile_ui_utils.dart';
+
+class PersonalInfoTab extends ConsumerStatefulWidget {
+  const PersonalInfoTab({required this.user, super.key});
+
+  final UserAccount user;
+
+  @override
+  ConsumerState<PersonalInfoTab> createState() => _PersonalInfoTabState();
+}
+
+class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _universityCtrl;
+  late final TextEditingController _currentPwdCtrl;
+  late final TextEditingController _newPwdCtrl;
+  late final TextEditingController _confirmPwdCtrl;
+
+  String? _major;
+  File? _pendingAvatar;
+  bool _isSaving = false;
+  bool _isChangingPwd = false;
+  bool _showPasswordSection = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.user.name ?? '');
+    _universityCtrl = TextEditingController(text: widget.user.university ?? '');
+    _major = widget.user.major;
+    _currentPwdCtrl = TextEditingController();
+    _newPwdCtrl = TextEditingController();
+    _confirmPwdCtrl = TextEditingController();
+  }
+
+  @override
+  void didUpdateWidget(covariant PersonalInfoTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.id != widget.user.id) {
+      _nameCtrl.text = widget.user.name ?? '';
+      _universityCtrl.text = widget.user.university ?? '';
+      _major = widget.user.major;
+      _pendingAvatar = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _universityCtrl.dispose();
+    _currentPwdCtrl.dispose();
+    _newPwdCtrl.dispose();
+    _confirmPwdCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickAvatar() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+    setState(() => _pendingAvatar = File(picked.path));
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
+    try {
+      final updated = widget.user.copyWith(
+        name: _nameCtrl.text.trim(),
+        university: _universityCtrl.text.trim(),
+        major: _major,
+      );
+      await ref.read(accountNotifierProvider.notifier).updatePersonal(
+            user: updated,
+            avatarFile: _pendingAvatar,
+          );
+      if (mounted) {
+        setState(() => _pendingAvatar = null);
+        ProfileUiUtils.showToast(context, 'Đã cập nhật thông tin cá nhân');
+      }
+    } catch (e) {
+      if (mounted) {
+        ProfileUiUtils.showToast(
+          context,
+          ProfileUiUtils.stripExceptionPrefix(e),
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _changePassword() async {
+    if (_newPwdCtrl.text.length < 6) {
+      ProfileUiUtils.showToast(context, 'Mật khẩu mới tối thiểu 6 ký tự', isError: true);
+      return;
+    }
+    if (_newPwdCtrl.text != _confirmPwdCtrl.text) {
+      ProfileUiUtils.showToast(context, 'Xác nhận mật khẩu không khớp', isError: true);
+      return;
+    }
+    setState(() => _isChangingPwd = true);
+    try {
+      await ref.read(accountNotifierProvider.notifier).changePassword(
+            currentPassword: _currentPwdCtrl.text,
+            newPassword: _newPwdCtrl.text,
+          );
+      _currentPwdCtrl.clear();
+      _newPwdCtrl.clear();
+      _confirmPwdCtrl.clear();
+      if (mounted) {
+        ProfileUiUtils.showToast(context, 'Đã đổi mật khẩu thành công');
+      }
+    } catch (e) {
+      if (mounted) {
+        ProfileUiUtils.showToast(
+          context,
+          ProfileUiUtils.stripExceptionPrefix(e),
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isChangingPwd = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final avatarUrl = widget.user.avatarUrl;
+
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.xl,
+        ),
+        children: [
+          Center(
+            child: GestureDetector(
+              onTap: _isSaving ? null : _pickAvatar,
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  AnimatedSwitcher(
+                    duration: 300.ms,
+                    child: _pendingAvatar != null
+                        ? CircleAvatar(
+                            key: const ValueKey('local'),
+                            radius: 52,
+                            backgroundImage: FileImage(_pendingAvatar!),
+                          )
+                        : CircleAvatar(
+                            key: ValueKey(avatarUrl ?? 'default'),
+                            radius: 52,
+                            backgroundColor: scheme.primaryContainer,
+                            backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                                ? NetworkImage(avatarUrl)
+                                : null,
+                            child: avatarUrl == null || avatarUrl.isEmpty
+                                ? Icon(Icons.person, size: 48, color: scheme.primary)
+                                : null,
+                          ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
+                  ),
+                ],
+              ),
+            ),
+          ).animate().scale(begin: const Offset(0.92, 0.92)),
+          const SizedBox(height: AppSpacing.xs),
+          Center(
+            child: Text(
+              'Chạm để đổi ảnh đại diện',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppPremiumTextField(
+            controller: _nameCtrl,
+            label: 'Họ và tên',
+            prefixIcon: Icons.badge_outlined,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Vui lòng nhập họ tên';
+              return null;
+            },
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppPremiumTextField(
+            controller: _universityCtrl,
+            label: 'Trường / Đơn vị',
+            prefixIcon: Icons.school_outlined,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('Chuyên ngành', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: AppSpacing.sm),
+          DropdownButtonFormField<String>(
+            initialValue: _major != null && MajorOptions.values.contains(_major)
+                ? _major
+                : null,
+            decoration: InputDecoration(
+              hintText: 'Chọn chuyên ngành',
+              filled: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            items: MajorOptions.values
+                .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                .toList(),
+            onChanged: (v) => setState(() => _major = v),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppGlassSurface(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                InkWell(
+                  onTap: () => setState(() => _showPasswordSection = !_showPasswordSection),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lock_outline, color: scheme.primary),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Đổi mật khẩu',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                      Icon(
+                        _showPasswordSection
+                            ? Icons.expand_less
+                            : Icons.expand_more,
+                      ),
+                    ],
+                  ),
+                ),
+                if (_showPasswordSection) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  AppPremiumTextField(
+                    controller: _currentPwdCtrl,
+                    label: 'Mật khẩu hiện tại',
+                    obscureText: true,
+                    prefixIcon: Icons.key_outlined,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppPremiumTextField(
+                    controller: _newPwdCtrl,
+                    label: 'Mật khẩu mới',
+                    obscureText: true,
+                    prefixIcon: Icons.lock_reset_outlined,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppPremiumTextField(
+                    controller: _confirmPwdCtrl,
+                    label: 'Xác nhận mật khẩu mới',
+                    obscureText: true,
+                    prefixIcon: Icons.verified_user_outlined,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  OutlinedButton(
+                    onPressed: _isChangingPwd ? null : _changePassword,
+                    child: _isChangingPwd
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Cập nhật mật khẩu'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppPrimaryButton(
+            label: _isSaving ? 'Đang lưu...' : 'Lưu thông tin',
+            onPressed: _isSaving ? null : _save,
+          ),
+        ],
+      ),
+    );
+  }
+}
