@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
+import 'package:inblue_mobile/design_system/components/app_premium_bottom_nav.dart';
 
 /// User shell — parity with web `UserDashboard` ChromeTabs.
 class UserDashboardPage extends StatelessWidget {
@@ -11,13 +12,15 @@ class UserDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
+    final index = _indexForLocation(location);
 
     return Scaffold(
+      extendBody: true,
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _indexForLocation(location),
-        onDestinationSelected: (index) {
-          switch (index) {
+      bottomNavigationBar: AppPremiumBottomNav(
+        selectedIndex: index,
+        onDestinationSelected: (i) {
+          switch (i) {
             case 0:
               context.go(RoutePaths.aiInterviewList);
             case 1:
@@ -28,15 +31,6 @@ class UserDashboardPage extends StatelessWidget {
               context.go(RoutePaths.profile);
           }
         },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.smart_toy_outlined), label: 'AI'),
-          NavigationDestination(icon: Icon(Icons.people_outline), label: 'Mock'),
-          NavigationDestination(
-            icon: Icon(Icons.notifications_outlined),
-            label: 'Thông báo',
-          ),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Hồ sơ'),
-        ],
       ),
     );
   }
