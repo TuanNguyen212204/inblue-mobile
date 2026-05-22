@@ -19,17 +19,22 @@ abstract final class AppTheme {
     final colorScheme = isDark
         ? const ColorScheme.dark(
             primary: AppColors.darkPrimary,
-            secondary: AppColors.brightBlue,
-            surface: AppColors.darkSurface,
-            error: AppColors.destructive,
             onPrimary: Colors.white,
+            secondary: AppColors.brightBlue,
+            onSecondary: Colors.white,
+            surface: AppColors.darkSurface,
             onSurface: AppColors.darkOnSurface,
+            surfaceContainerHighest: AppColors.darkSurfaceContainer,
+            outline: Color(0xFF2D3F5C),
+            error: AppColors.destructive,
+            onError: Colors.white,
           )
         : ColorScheme.fromSeed(
             seedColor: AppColors.cobaltBlue,
             primary: AppColors.cobaltBlue,
             secondary: AppColors.brightBlue,
             surface: AppColors.aliceBlue,
+            surfaceContainerHighest: AppColors.veryLightBlue,
             error: AppColors.destructive,
             brightness: Brightness.light,
           );
@@ -49,7 +54,15 @@ abstract final class AppTheme {
         backgroundColor: isDark ? AppColors.darkSurface : AppColors.cobaltBlue,
         foregroundColor: isDark ? AppColors.darkOnSurface : AppColors.onPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        toolbarHeight: 48,
+        titleTextStyle: AppTypography.textTheme(isDark: isDark)
+            .titleMedium
+            ?.copyWith(
+              color: isDark ? AppColors.darkOnSurface : AppColors.onPrimary,
+              fontWeight: FontWeight.w600,
+            ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -84,9 +97,30 @@ abstract final class AppTheme {
         border: OutlineInputBorder(borderRadius: AppRadius.button),
       ),
       navigationBarTheme: NavigationBarThemeData(
+        height: 64,
         backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         indicatorColor: (isDark ? AppColors.darkPrimary : AppColors.cobaltBlue)
             .withValues(alpha: 0.15),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return TextStyle(
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            color: isDark
+                ? AppColors.darkOnSurface.withValues(alpha: selected ? 1 : 0.65)
+                : AppColors.onSurface.withValues(alpha: selected ? 1 : 0.6),
+          );
+        }),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
+      ),
+      dividerTheme: DividerThemeData(
+        color: (isDark ? AppColors.darkOnSurface : AppColors.onSurface)
+            .withValues(alpha: 0.08),
+        space: 1,
+        thickness: 1,
       ),
     );
   }
