@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:inblue_mobile/design_system/tokens/app_colors.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 
@@ -72,7 +71,7 @@ class AppPremiumBottomNav extends StatelessWidget {
           ),
         ),
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.12, curve: Curves.easeOutCubic);
+    );
   }
 }
 

@@ -3,15 +3,15 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
 import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
+import 'package:inblue_mobile/features/dashboard/presentation/widgets/shell_tab_body.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: CustomScrollView(
+    return ShellTabBody(
+      child: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(
             child: AppCompactHeader(
@@ -24,7 +24,7 @@ class NotificationsPage extends StatelessWidget {
               AppSpacing.md,
               AppSpacing.sm,
               AppSpacing.md,
-              100,
+              ShellTabLayout.bottomInset,
             ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([

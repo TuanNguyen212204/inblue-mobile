@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
+import 'package:inblue_mobile/features/dashboard/presentation/widgets/shell_tab_body.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_session.dart';
@@ -33,8 +34,8 @@ class _AiInterviewListPageState extends ConsumerState<AiInterviewListPage> {
   Widget build(BuildContext context) {
     final listAsync = ref.watch(aiInterviewListNotifierProvider);
 
-    return Scaffold(
-      body: CustomScrollView(
+    return ShellTabBody(
+      child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: AppCompactHeader(
@@ -132,7 +133,7 @@ class _AiInterviewListPageState extends ConsumerState<AiInterviewListPage> {
                           .fadeIn()
                           .slideY(begin: 0.04);
                     }),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: ShellTabLayout.bottomInset),
                 ]),
               );
             },

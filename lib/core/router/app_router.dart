@@ -19,7 +19,12 @@ import 'package:inblue_mobile/features/notifications/presentation/pages/notifica
 import 'package:inblue_mobile/features/profile/presentation/pages/profile_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorKey = GlobalKey<NavigatorState>();
+final _shellNavigatorAiKey = GlobalKey<NavigatorState>(debugLabel: 'shellAi');
+final _shellNavigatorMockKey = GlobalKey<NavigatorState>(debugLabel: 'shellMock');
+final _shellNavigatorNotifKey = GlobalKey<NavigatorState>(debugLabel: 'shellNotif');
+final _shellNavigatorProfileKey = GlobalKey<NavigatorState>(debugLabel: 'shellProfile');
+
+Page<void> _noTransitionPage(Widget child) => NoTransitionPage(child: child);
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -44,33 +49,55 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.login,
         builder: (_, __) => const LoginPage(),
       ),
-      ShellRoute(
-        navigatorKey: _shellNavigatorKey,
-        builder: (_, __, child) => UserDashboardPage(child: child),
-        routes: [
-          GoRoute(
-            path: RoutePaths.dashboard,
-            redirect: (_, __) => RoutePaths.aiInterviewList,
+      GoRoute(
+        path: RoutePaths.dashboard,
+        redirect: (_, __) => RoutePaths.aiInterviewList,
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (_, __, navigationShell) =>
+            UserDashboardPage(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            navigatorKey: _shellNavigatorAiKey,
+            routes: [
+              GoRoute(
+                path: RoutePaths.aiInterviewList,
+                pageBuilder: (_, __) =>
+                    _noTransitionPage(const AiInterviewListPage()),
+              ),
+            ],
           ),
-          GoRoute(
-            path: RoutePaths.aiInterviewList,
-            builder: (_, __) => const AiInterviewListPage(),
+          StatefulShellBranch(
+            navigatorKey: _shellNavigatorMockKey,
+            routes: [
+              GoRoute(
+                path: RoutePaths.mockInterviewList,
+                pageBuilder: (_, __) =>
+                    _noTransitionPage(const MockInterviewListPage()),
+              ),
+            ],
           ),
-          GoRoute(
-            path: RoutePaths.mockInterviewList,
-            builder: (_, __) => const MockInterviewListPage(),
+          StatefulShellBranch(
+            navigatorKey: _shellNavigatorNotifKey,
+            routes: [
+              GoRoute(
+                path: RoutePaths.notifications,
+                pageBuilder: (_, __) =>
+                    _noTransitionPage(const NotificationsPage()),
+              ),
+            ],
           ),
-          GoRoute(
-            path: RoutePaths.notifications,
-            builder: (_, __) => const NotificationsPage(),
-          ),
-          GoRoute(
-            path: RoutePaths.profile,
-            builder: (_, __) => const ProfilePage(),
+          StatefulShellBranch(
+            navigatorKey: _shellNavigatorProfileKey,
+            routes: [
+              GoRoute(
+                path: RoutePaths.profile,
+                pageBuilder: (_, __) => _noTransitionPage(const ProfilePage()),
+              ),
+            ],
           ),
         ],
       ),
-      // Full-screen flows outside bottom nav shell
       GoRoute(
         path: RoutePaths.aiInterviewSetup,
         parentNavigatorKey: _rootNavigatorKey,

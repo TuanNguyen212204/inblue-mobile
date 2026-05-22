@@ -9,6 +9,7 @@ import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/tokens/app_radius.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:inblue_mobile/features/dashboard/presentation/widgets/shell_tab_body.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -32,9 +33,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final themeMode = ref.watch(themeModeProvider);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      extendBody: true,
-      body: CustomScrollView(
+    return ShellTabBody(
+      child: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(
             child: AppCompactHeader(
@@ -47,7 +47,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               AppSpacing.md,
               0,
               AppSpacing.md,
-              100,
+              ShellTabLayout.bottomInset,
             ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([

@@ -8,6 +8,7 @@ import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/components/app_status_badge.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
+import 'package:inblue_mobile/features/dashboard/presentation/widgets/shell_tab_body.dart';
 import 'package:inblue_mobile/features/mock_interview/domain/entities/mock_session.dart';
 import 'package:inblue_mobile/features/mock_interview/presentation/providers/mock_interview_providers.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_empty_state.dart';
@@ -21,8 +22,8 @@ class MockInterviewListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sessions = ref.watch(mockSessionListProvider);
 
-    return Scaffold(
-      body: RefreshIndicator(
+    return ShellTabBody(
+      child: RefreshIndicator(
         onRefresh: () async => ref.invalidate(mockSessionListProvider),
         child: CustomScrollView(
           slivers: [
@@ -97,7 +98,9 @@ class MockInterviewListPage extends ConsumerWidget {
                 );
               },
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: ShellTabLayout.bottomInset),
+            ),
           ],
         ),
       ),
