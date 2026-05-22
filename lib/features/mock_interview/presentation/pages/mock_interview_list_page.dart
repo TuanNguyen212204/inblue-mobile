@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
+import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
+import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/components/app_status_badge.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
@@ -24,14 +26,17 @@ class MockInterviewListPage extends ConsumerWidget {
         onRefresh: () async => ref.invalidate(mockSessionListProvider),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar.large(
-              title: const Text('Phỏng vấn Mock'),
-              actions: [
-                IconButton(
-                  onPressed: () => context.push(RoutePaths.mockInterviewSchedule),
-                  icon: const Icon(Icons.calendar_month_outlined),
-                ),
-              ],
+            SliverToBoxAdapter(
+              child: AppCompactHeader(
+                title: 'Phỏng vấn Mock',
+                subtitle: 'Lịch với mentor chuyên gia',
+                actions: [
+                  IconButton(
+                    onPressed: () => context.push(RoutePaths.mockInterviewSchedule),
+                    icon: const Icon(Icons.calendar_month_outlined),
+                  ),
+                ],
+              ),
             ),
             SliverToBoxAdapter(
               child: Padding(
@@ -108,23 +113,25 @@ class _SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canJoin = session.canJoin(DateTime.now());
-    return Card(
-      margin: const EdgeInsets.fromLTRB(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
         AppSpacing.sm,
         AppSpacing.md,
         0,
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          if (session.id != null) {
-            context.push(RoutePaths.mockInterviewHistoryPath(session.id!));
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
+      child: AppGlassSurface(
+        padding: EdgeInsets.zero,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            if (session.id != null) {
+              context.push(RoutePaths.mockInterviewHistoryPath(session.id!));
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -149,6 +156,7 @@ class _SessionCard extends StatelessWidget {
                   },
                 ),
             ],
+            ),
           ),
         ),
       ),
