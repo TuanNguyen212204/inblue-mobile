@@ -17,6 +17,14 @@ import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
 class AiInterviewSetupPage extends ConsumerWidget {
   const AiInterviewSetupPage({super.key});
 
+  void _handleBack(BuildContext context, WidgetRef ref, int step) {
+    if (step > 0) {
+      ref.read(aiInterviewSetupNotifierProvider.notifier).setStep(step - 1);
+    } else {
+      context.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setup = ref.watch(aiInterviewSetupNotifierProvider);
@@ -32,14 +40,20 @@ class AiInterviewSetupPage extends ConsumerWidget {
             onRetry: () => ref.invalidate(aiInterviewSetupNotifierProvider),
           ),
         ),
-        data: (state) => Column(
-          children: [
+        data: (state) => PopScope(
+          canPop: state.step == 0,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            _handleBack(context, ref, state.step);
+          },
+          child: Column(
+            children: [
             AppCompactHeader(
               title: 'Thiết lập phỏng vấn AI',
               subtitle: 'Bước ${state.step + 1} / 3',
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => context.pop(),
+                onPressed: () => _handleBack(context, ref, state.step),
               ),
             ),
             _StepIndicator(current: state.step),
@@ -86,7 +100,8 @@ class AiInterviewSetupPage extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
