@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:inblue_mobile/design_system/layout/app_content_safe_area.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 
 /// Slim in-content header — avoids tall SliverAppBar on mobile lists.
@@ -30,16 +31,17 @@ class AppCompactHeader extends StatelessWidget implements PreferredSizeWidget {
 
     return Material(
       color: Colors.transparent,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.sm,
-              AppSpacing.sm,
-              AppSpacing.xs,
-            ),
+      child: AppContentSafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.sm,
+                AppSpacing.xs,
+              ),
             child: Row(
               children: [
                 if (leading != null) ...[leading!, const SizedBox(width: AppSpacing.sm)],
@@ -69,8 +71,9 @@ class AppCompactHeader extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
           ),
-          if (bottom != null) bottom!,
-        ],
+            if (bottom != null) bottom!,
+          ],
+        ),
       ),
     );
   }
