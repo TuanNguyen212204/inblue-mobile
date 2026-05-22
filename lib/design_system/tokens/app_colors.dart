@@ -19,4 +19,11 @@ abstract final class AppColors {
   static const darkSurfaceContainer = Color(0xFF1A2740);
   static const darkOnSurface = Color(0xFFE8EEF7);
   static const darkPrimary = Color(0xFF3B8BFF);
+
+  // Glass & depth (theme-aware via alpha on surface)
+  static const glassBorderLight = Color(0x33FFFFFF);
+  static const glassBorderDark = Color(0x1AFFFFFF);
+  static const meshAccentLight = Color(0xFF007BFF);
+  static const meshAccentDark = Color(0xFF5BA3FF);
+  static const navBarShadow = Color(0x140047AB);
 }
