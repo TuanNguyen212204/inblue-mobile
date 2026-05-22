@@ -1,3 +1,5 @@
+import 'package:inblue_mobile/core/utils/json_coercion.dart';
+
 class MockSession {
   MockSession({
     this.id,
@@ -24,15 +26,15 @@ class MockSession {
   final String? recordUrl;
 
   factory MockSession.fromJson(Map<String, dynamic> json) => MockSession(
-        id: (json['id'] as num?)?.toInt(),
+        id: JsonCoercion.asInt(json['id']),
         roomName: json['roomName'] as String?,
-        userId: (json['userId'] as num?)?.toInt(),
-        userId2: (json['userId2'] as num?)?.toInt(),
+        userId: JsonCoercion.asInt(json['userId']),
+        userId2: JsonCoercion.asInt(json['userId2']),
         roomUrl: json['roomUrl'] as String?,
         joinTime: json['joinTime'] as String?,
         status: json['status'] as String?,
-        duration: (json['duration'] as num?)?.toInt(),
-        totalPrice: (json['totalPrice'] as num?)?.toDouble(),
+        duration: JsonCoercion.asInt(json['duration']),
+        totalPrice: JsonCoercion.asDouble(json['totalPrice']),
         recordUrl: json['recordUrl'] as String?,
       );
 

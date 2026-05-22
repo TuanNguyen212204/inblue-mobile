@@ -1,3 +1,5 @@
+import 'package:inblue_mobile/core/utils/json_coercion.dart';
+
 class Mentor {
   Mentor({
     this.id,
@@ -26,16 +28,16 @@ class Mentor {
   final bool? active;
 
   factory Mentor.fromJson(Map<String, dynamic> json) => Mentor(
-        id: (json['id'] as num?)?.toInt(),
+        id: JsonCoercion.asInt(json['id']),
         name: json['name'] as String?,
         email: json['email'] as String?,
         bio: json['bio'] as String?,
-        avatarUrl: json['avatarUrl'] as String?,
+        avatarUrl: json['avatarUrl'] as String? ?? json['avatar'] as String?,
         expertise: json['expertise'] as String?,
-        yearsOfExperience: (json['yearsOfExperience'] as num?)?.toInt(),
-        pricePerMinute: (json['pricePerMinute'] as num?)?.toDouble(),
-        averageRating: (json['averageRating'] as num?)?.toDouble(),
-        totalSession: (json['totalSession'] as num?)?.toInt(),
-        active: json['active'] as bool?,
+        yearsOfExperience: JsonCoercion.asInt(json['yearsOfExperience']),
+        pricePerMinute: JsonCoercion.asDouble(json['pricePerMinute']),
+        averageRating: JsonCoercion.asDouble(json['averageRating']),
+        totalSession: JsonCoercion.asInt(json['totalSession']),
+        active: JsonCoercion.asBool(json['active']),
       );
 }

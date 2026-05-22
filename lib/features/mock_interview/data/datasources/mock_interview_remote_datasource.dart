@@ -9,11 +9,23 @@ class MockInterviewRemoteDataSource {
   final Dio _dio;
 
   Future<List<Mentor>> getMentors() async {
-    final res = await _dio.get<List<dynamic>>(ApiPaths.mentors);
-    return (res.data ?? [])
-        .map((e) => Mentor.fromJson(e as Map<String, dynamic>))
+    final res = await _dio.get<dynamic>(ApiPaths.mentors);
+    final list = _unwrapList(res.data);
+    return list
+        .map((e) => Mentor.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((m) => m.active != false)
         .toList();
+  }
+
+  List<dynamic> _unwrapList(dynamic data) {
+    if (data is List) return data;
+    if (data is Map) {
+      for (final key in ['data', 'content', 'items', 'mentors']) {
+        final nested = data[key];
+        if (nested is List) return nested;
+      }
+    }
+    return const [];
   }
 
   Future<Mentor> getMentor(int id) async {
