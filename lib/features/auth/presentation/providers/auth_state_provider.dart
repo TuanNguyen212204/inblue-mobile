@@ -5,11 +5,22 @@ class AuthState {
   const AuthState({required this.isAuthenticated});
 
   final bool isAuthenticated;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AuthState && isAuthenticated == other.isAuthenticated;
+
+  @override
+  int get hashCode => isAuthenticated.hashCode;
 }
 
-final authStateProvider = Provider<AuthState>((ref) {
+/// Primitive — profile refresh must NOT recreate [GoRouter].
+final isAuthenticatedProvider = Provider<bool>((ref) {
   final session = ref.watch(authNotifierProvider).valueOrNull;
-  return AuthState(
-    isAuthenticated: session != null && session.isLoggedIn && !session.isExpired,
-  );
+  return session != null && session.isLoggedIn && !session.isExpired;
+});
+
+final authStateProvider = Provider<AuthState>((ref) {
+  return AuthState(isAuthenticated: ref.watch(isAuthenticatedProvider));
 });
