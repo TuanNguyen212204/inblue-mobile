@@ -29,6 +29,8 @@ migrate_working_dir/
 .packages
 .pub-cache/
 .pub/
+# Keep pubspec.lock committed for reproducible builds
+!/pubspec.lock
 /build/
 /coverage/
 *.symbols
