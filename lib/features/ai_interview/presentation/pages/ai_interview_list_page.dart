@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
+import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_session.dart';
@@ -35,14 +36,17 @@ class _AiInterviewListPageState extends ConsumerState<AiInterviewListPage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
-            title: const Text('Phỏng vấn AI'),
-            actions: [
-              IconButton(
-                onPressed: () => context.push(RoutePaths.aiInterviewSetup),
-                icon: const Icon(Icons.add_circle_outline),
-              ),
-            ],
+          SliverToBoxAdapter(
+            child: AppCompactHeader(
+              title: 'Phỏng vấn AI',
+              subtitle: 'Luyện tập & đánh giá bằng AI',
+              actions: [
+                IconButton(
+                  onPressed: () => context.push(RoutePaths.aiInterviewSetup),
+                  icon: const Icon(Icons.add_circle_outline),
+                ),
+              ],
+            ),
           ),
           SliverToBoxAdapter(
             child: Padding(
