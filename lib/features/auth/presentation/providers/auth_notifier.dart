@@ -25,7 +25,7 @@ class AuthNotifier extends AsyncNotifier<AuthSession?> {
         return null;
       }
       ref.read(authTokenProvider.notifier).state = session.token;
-      return session;
+      return _enrichUser(session);
     } catch (_) {
       await _clear();
       return null;
@@ -45,8 +45,25 @@ class AuthNotifier extends AsyncNotifier<AuthSession?> {
             jsonEncode(session.toJson()),
           );
       ref.read(authTokenProvider.notifier).state = token;
-      return session;
+      return _enrichUser(session);
     });
+  }
+
+  /// Refresh display name/email from BE (e.g. Profile screen).
+  Future<void> refreshUserProfile() async {
+    final current = state.valueOrNull;
+    if (current == null || current.user.id <= 0) return;
+    try {
+      final fresh =
+          await ref.read(userRemoteDataSourceProvider).fetchById(current.user.id);
+      final enriched = current.copyWith(user: fresh);
+      await ref.read(secureStorageProvider).writeAuthPayload(
+            jsonEncode(enriched.toJson()),
+          );
+      state = AsyncData(enriched);
+    } catch (_) {
+      // Keep cached session on network errors.
+    }
   }
 
   Future<void> logout() async {
@@ -64,11 +81,31 @@ class AuthNotifier extends AsyncNotifier<AuthSession?> {
       expiresAt: expMs,
       user: AuthUser(
         id: id,
-        email: (payload['email'] ?? payload['sub'] ?? '') as String,
-        name: payload['name'] as String?,
+        email: AuthUser.readEmailFrom(payload),
+        name: AuthUser.readDisplayNameFrom(payload),
         role: (payload['role'] ?? 'USER') as String,
       ),
     );
+  }
+
+  Future<AuthSession> _enrichUser(AuthSession session) async {
+    final user = session.user;
+    if (user.id <= 0) return session;
+    final needsProfile = user.name == null ||
+        user.name!.isEmpty ||
+        !user.email.contains('@');
+    if (!needsProfile) return session;
+
+    try {
+      final fresh = await ref.read(userRemoteDataSourceProvider).fetchById(user.id);
+      final enriched = session.copyWith(user: fresh);
+      await ref.read(secureStorageProvider).writeAuthPayload(
+            jsonEncode(enriched.toJson()),
+          );
+      return enriched;
+    } catch (_) {
+      return session;
+    }
   }
 
   int _readId(Map<String, dynamic> payload) {

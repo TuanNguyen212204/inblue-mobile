@@ -10,11 +10,24 @@ import 'package:inblue_mobile/design_system/tokens/app_radius.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
 
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authNotifierProvider.notifier).refreshUserProfile();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(authNotifierProvider).valueOrNull;
     final themeMode = ref.watch(themeModeProvider);
     final scheme = Theme.of(context).colorScheme;
@@ -63,7 +76,7 @@ class ProfilePage extends ConsumerWidget {
                             ),
                             child: Center(
                               child: Text(
-                                _initials(session.user.name ?? session.user.email),
+                                _initials(session.user.displayName),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 22,
@@ -79,16 +92,18 @@ class ProfilePage extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                session.user.name ?? 'Ứng viên',
+                                session.user.displayName,
                                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w700,
                                     ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                session.user.email,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
+                              if (session.user.email.contains('@')) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  session.user.email,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
                             ],
                           ),
                         ),

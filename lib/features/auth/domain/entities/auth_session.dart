@@ -31,6 +31,19 @@ class AuthSession extends Equatable {
         'expiresAt': expiresAt,
       };
 
+  AuthSession copyWith({
+    bool? isLoggedIn,
+    AuthUser? user,
+    String? token,
+    int? expiresAt,
+  }) =>
+      AuthSession(
+        isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+        user: user ?? this.user,
+        token: token ?? this.token,
+        expiresAt: expiresAt ?? this.expiresAt,
+      );
+
   @override
   List<Object?> get props => [isLoggedIn, user, token, expiresAt];
 }
