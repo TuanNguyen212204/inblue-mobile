@@ -9,8 +9,9 @@ import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_models.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_room_notifier.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/services/interview_speech_service.dart';
-import 'package:inblue_mobile/features/ai_interview/presentation/widgets/ai_chat_bubble.dart';
-import 'package:inblue_mobile/features/ai_interview/presentation/widgets/ai_typing_indicator.dart';
+import 'package:inblue_mobile/features/ai_interview/presentation/widgets/ai_room_chat_panel.dart';
+import 'package:inblue_mobile/features/ai_interview/presentation/widgets/ai_room_stage.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class AiInterviewRoomPage extends ConsumerStatefulWidget {
   const AiInterviewRoomPage({required this.sessionKey, super.key});
@@ -68,20 +69,36 @@ class _AiInterviewRoomPageState extends ConsumerState<AiInterviewRoomPage> {
         if (!didPop) _confirmExit(context);
       },
       child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: room.phase == AiRoomPhase.deviceCheck
-            ? AppBar(title: const Text('Kiểm tra thiết bị'))
+            ? AppBar(
+                title: const Text('Kiểm tra thiết bị'),
+                centerTitle: true,
+              )
             : AppBar(
-                title: Text(room.phaseName ?? 'Phỏng vấn AI'),
+                title: Text(
+                  room.phaseName ?? 'Phỏng vấn AI',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
                 automaticallyImplyLeading: false,
                 actions: [
                   IconButton(
                     onPressed: () => _confirmExit(context),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(4),
-                  child: LinearProgressIndicator(value: room.progress),
+                  preferredSize: const Size.fromHeight(3),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: room.progress),
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    builder: (_, value, __) => LinearProgressIndicator(
+                      value: value,
+                      minHeight: 3,
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
                 ),
               ),
         body: switch (room.phase) {
@@ -90,15 +107,18 @@ class _AiInterviewRoomPageState extends ConsumerState<AiInterviewRoomPage> {
                   .read(aiInterviewRoomProvider(widget.sessionKey).notifier)
                   .confirmDeviceCheck(),
             ),
-          AiRoomPhase.loading || AiRoomPhase.starting => const Center(
+          AiRoomPhase.loading || AiRoomPhase.starting => Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Đang khởi tạo phòng phỏng vấn...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Đang khởi tạo phòng phỏng vấn...',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ],
-              ),
+              ).animate().fadeIn().scale(begin: const Offset(0.96, 0.96)),
             ),
           AiRoomPhase.expired || AiRoomPhase.error => _EndState(
               message: room.errorMessage ?? 'Phiên không khả dụng',
@@ -115,12 +135,23 @@ class _AiInterviewRoomPageState extends ConsumerState<AiInterviewRoomPage> {
                 }
               },
             ),
-          _ => _RoomBody(
-              room: room,
-              answerCtrl: _answerCtrl,
-              scrollCtrl: _scrollCtrl,
-              speech: _speech,
-              sessionKey: widget.sessionKey,
+          _ => Column(
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: AiRoomStage(room: room),
+                ),
+                Expanded(
+                  flex: 6,
+                  child: AiRoomChatPanel(
+                    room: room,
+                    answerCtrl: _answerCtrl,
+                    scrollCtrl: _scrollCtrl,
+                    speech: _speech,
+                    sessionKey: widget.sessionKey,
+                  ),
+                ),
+              ],
             ),
         },
       ),
@@ -146,194 +177,6 @@ class _AiInterviewRoomPageState extends ConsumerState<AiInterviewRoomPage> {
   }
 }
 
-class _RoomBody extends ConsumerWidget {
-  const _RoomBody({
-    required this.room,
-    required this.answerCtrl,
-    required this.scrollCtrl,
-    required this.speech,
-    required this.sessionKey,
-  });
-
-  final AiRoomState room;
-  final TextEditingController answerCtrl;
-  final ScrollController scrollCtrl;
-  final InterviewSpeechService speech;
-  final String sessionKey;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(aiInterviewRoomProvider(sessionKey).notifier);
-    final disabled = room.phase == AiRoomPhase.submitting ||
-        room.phase == AiRoomPhase.evaluating;
-
-    return Column(
-      children: [
-        Expanded(
-          flex: 4,
-          child: _AiStage(
-            room: room,
-            onReplay: (text) => speech.speak(text),
-          ),
-        ),
-        Expanded(
-          flex: 6,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    controller: scrollCtrl,
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    children: [
-                      ...room.messages.map(
-                        (m) => AiChatBubble(
-                          text: m.text,
-                          isUser: m.isUser,
-                          onReplayTts:
-                              m.isUser ? null : () => speech.speak(m.text),
-                        ),
-                      ),
-                      if (room.phase == AiRoomPhase.submitting)
-                        const AiTypingIndicator(
-                          label: 'AI đang xử lý câu trả lời vừa gửi',
-                        ),
-                      if (room.phase == AiRoomPhase.evaluating)
-                        const AiTypingIndicator(
-                          label: 'AI đang đánh giá phản hồi của bạn',
-                        ),
-                    ],
-                  ),
-                ),
-                if (disabled)
-                  const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.lock_outline, size: 16),
-                        SizedBox(width: 6),
-                        Text('Đang chờ AI...'),
-                      ],
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: disabled
-                            ? null
-                            : () async {
-                                if (room.isListening) {
-                                  await speech.stopListening();
-                                  notifier.setListening(false);
-                                  notifier.submitAnswer(answerCtrl.text);
-                                } else {
-                                  notifier.setListening(true);
-                                  await speech.listen(
-                                    onResult: (text) {
-                                      answerCtrl.text = text;
-                                      notifier.setDraft(text);
-                                    },
-                                  );
-                                }
-                              },
-                        icon: Icon(
-                          room.isListening ? Icons.stop_circle : Icons.mic,
-                          color: room.isListening ? Colors.red : null,
-                        ),
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: answerCtrl,
-                          enabled: !disabled,
-                          maxLines: 3,
-                          minLines: 1,
-                          decoration: const InputDecoration(
-                            hintText: 'Nhập câu trả lời...',
-                          ),
-                          onChanged: notifier.setDraft,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: disabled
-                            ? null
-                            : () => notifier.submitAnswer(),
-                        icon: const Icon(Icons.send_rounded),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AiStage extends StatelessWidget {
-  const _AiStage({required this.room, required this.onReplay});
-
-  final AiRoomState room;
-  final void Function(String text) onReplay;
-
-  @override
-  Widget build(BuildContext context) {
-    final thinking = room.phase == AiRoomPhase.submitting ||
-        room.phase == AiRoomPhase.evaluating;
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
-            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
-            blurRadius: thinking ? 24 : 12,
-            spreadRadius: thinking ? 4 : 0,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.smart_toy, size: 72, color: Colors.white),
-          const SizedBox(height: 12),
-          Text(
-            thinking ? 'AI đang suy nghĩ...' : 'Trợ lý phỏng vấn AI',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (room.isListening) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'Đang thu âm câu trả lời của bạn',
-              style: TextStyle(color: Colors.white70),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 class _DeviceCheck extends StatelessWidget {
   const _DeviceCheck({required this.onConfirm});
 
@@ -346,16 +189,29 @@ class _DeviceCheck extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.headset_mic, size: 64),
+          Icon(
+            Icons.headset_mic_rounded,
+            size: 72,
+            color: Theme.of(context).colorScheme.primary,
+          ).animate().scale(
+                begin: const Offset(0.9, 0.9),
+                duration: 500.ms,
+                curve: Curves.easeOutBack,
+              ),
           const SizedBox(height: AppSpacing.md),
-          const Text(
+          Text(
             'Kiểm tra micro, loa và camera trước khi bắt đầu',
             textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: AppSpacing.lg),
-          AppPrimaryButton(label: 'Sẵn sàng — Bắt đầu', onPressed: onConfirm),
+          AppPrimaryButton(
+            label: 'Sẵn sàng — Bắt đầu',
+            icon: Icons.play_arrow_rounded,
+            onPressed: onConfirm,
+          ),
         ],
-      ),
+      ).animate().fadeIn(duration: 400.ms),
     );
   }
 }
@@ -379,12 +235,23 @@ class _EndState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge),
+            Icon(
+              Icons.celebration_outlined,
+              size: 56,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             AppPrimaryButton(label: actionLabel, onPressed: onAction),
           ],
-        ),
+        ).animate().fadeIn().slideY(begin: 0.06),
       ),
     );
   }
