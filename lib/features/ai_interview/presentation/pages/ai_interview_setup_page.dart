@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
+import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
+import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
+import 'package:inblue_mobile/design_system/components/app_selectable_option_card.dart';
+import 'package:inblue_mobile/design_system/layout/app_content_safe_area.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_models.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_setup_notifier.dart';
@@ -17,15 +22,26 @@ class AiInterviewSetupPage extends ConsumerWidget {
     final setup = ref.watch(aiInterviewSetupNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Thiết lập phỏng vấn AI')),
       body: setup.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => AppErrorView(
-          message: e.toString(),
-          onRetry: () => ref.invalidate(aiInterviewSetupNotifierProvider),
+        loading: () => const AppContentSafeArea(
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => AppContentSafeArea(
+          child: AppErrorView(
+            message: e.toString(),
+            onRetry: () => ref.invalidate(aiInterviewSetupNotifierProvider),
+          ),
         ),
         data: (state) => Column(
           children: [
+            AppCompactHeader(
+              title: 'Thiết lập phỏng vấn AI',
+              subtitle: 'Bước ${state.step + 1} / 3',
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => context.pop(),
+              ),
+            ),
             _StepIndicator(current: state.step),
             Expanded(
               child: AnimatedSwitcher(
@@ -37,29 +53,37 @@ class AiInterviewSetupPage extends ConsumerWidget {
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                children: [
-                  if (state.step > 0)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: Row(
+                  children: [
+                    if (state.step > 0)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => ref
+                              .read(aiInterviewSetupNotifierProvider.notifier)
+                              .setStep(state.step - 1),
+                          child: const Text('Quay lại'),
+                        ),
+                      ),
+                    if (state.step > 0) const SizedBox(width: AppSpacing.sm),
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => ref
-                            .read(aiInterviewSetupNotifierProvider.notifier)
-                            .setStep(state.step - 1),
-                        child: const Text('Quay lại'),
+                      flex: 2,
+                      child: AppPrimaryButton(
+                        label: state.step < 2 ? 'Tiếp tục' : 'Bắt đầu phỏng vấn',
+                        isLoading: state.isCreating,
+                        onPressed: () => _onNext(context, ref, state),
                       ),
                     ),
-                  if (state.step > 0) const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    flex: 2,
-                    child: AppPrimaryButton(
-                      label: state.step < 2 ? 'Tiếp tục' : 'Bắt đầu phỏng vấn',
-                      isLoading: state.isCreating,
-                      onPressed: () => _onNext(context, ref, state),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -105,7 +129,7 @@ class AiInterviewSetupPage extends ConsumerWidget {
         context.go(RoutePaths.aiInterviewSessionPath(sessionKey));
       }
     } catch (e) {
-      _toast(context, e.toString());
+      if (context.mounted) _toast(context, e.toString());
     }
   }
 
@@ -122,7 +146,7 @@ class _StepIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
       child: Row(
         children: List.generate(3, (i) {
           final active = i <= current;
@@ -137,7 +161,7 @@ class _StepIndicator extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-          );
+          ).animate().fadeIn(delay: (i * 80).ms);
         }),
       ),
     );
@@ -156,86 +180,97 @@ class _StepConfig extends ConsumerWidget {
     final notifier = ref.read(aiInterviewSetupNotifierProvider.notifier);
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.lg,
+      ),
       children: [
-        _OptionSection(
+        AppOptionSection(
           title: 'Chế độ phỏng vấn',
-          options: options.interviewModes,
-          selected: state.interviewMode,
-          onSelect: (v) => notifier.selectConfig(interviewMode: v),
+          subtitle: 'Chọn hình thức AI phỏng vấn bạn muốn',
+          children: _optionCards(
+            options: options.interviewModes,
+            selected: state.interviewMode,
+            onSelect: (v) => notifier.selectConfig(interviewMode: v),
+            icon: Icons.record_voice_over_outlined,
+          ),
         ),
-        _OptionSection(
+        AppOptionSection(
           title: 'Độ khó',
-          options: options.difficulties,
-          selected: state.difficulty,
-          onSelect: (v) => notifier.selectConfig(difficulty: v),
+          subtitle: 'Mức độ câu hỏi và đánh giá',
+          children: _optionCards(
+            options: options.difficulties,
+            selected: state.difficulty,
+            onSelect: (v) => notifier.selectConfig(difficulty: v),
+            icon: Icons.trending_up_rounded,
+          ),
         ),
-        _OptionSection(
+        AppOptionSection(
           title: 'Ngôn ngữ JD',
-          options: options.languages,
-          selected: state.language,
-          onSelect: (v) => notifier.selectConfig(language: v),
+          children: _optionCards(
+            options: options.languages,
+            selected: state.language,
+            onSelect: (v) => notifier.selectConfig(language: v),
+            icon: Icons.translate_rounded,
+          ),
         ),
-        _OptionSection(
+        AppOptionSection(
           title: 'Lĩnh vực',
-          options: options.domains,
-          selected: state.domain,
-          onSelect: (v) => notifier.selectConfig(domain: v),
+          children: _optionCards(
+            options: options.domains,
+            selected: state.domain,
+            onSelect: (v) => notifier.selectConfig(domain: v),
+            icon: Icons.work_outline_rounded,
+          ),
         ),
-        const Text('Thời lượng'),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: 8,
-          children: [15, 30, 45, 60].map((m) {
-            final selected = state.durationMinutes == m;
-            return ChoiceChip(
-              label: Text('$m phút'),
-              selected: selected,
-              onSelected: (_) => notifier.selectConfig(durationMinutes: m),
-            );
-          }).toList(),
+        AppOptionSection(
+          title: 'Thời lượng',
+          subtitle: 'Thời gian tối đa cho buổi phỏng vấn',
+          children: [
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: AppSpacing.sm,
+              crossAxisSpacing: AppSpacing.sm,
+              childAspectRatio: 2.4,
+              children: [15, 30, 45, 60].asMap().entries.map((entry) {
+                final m = entry.value;
+                final selected = state.durationMinutes == m;
+                return AppSelectableOptionCard(
+                  label: '$m phút',
+                  selected: selected,
+                  icon: Icons.timer_outlined,
+                  animationIndex: entry.key,
+                  onTap: () => notifier.selectConfig(durationMinutes: m),
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ],
     );
   }
-}
 
-class _OptionSection extends StatelessWidget {
-  const _OptionSection({
-    required this.title,
-    required this.options,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final String title;
-  final List<ConfigOption> options;
-  final String? selected;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.sm),
-        ...options.map(
-          (o) => Card(
-            child: ListTile(
-              title: Text(o.label),
-              subtitle: o.description != null ? Text(o.description!) : null,
-              trailing: selected == o.key
-                  ? Icon(Icons.check_circle,
-                      color: Theme.of(context).colorScheme.primary)
-                  : null,
-              onTap: () => onSelect(o.key),
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-      ],
-    );
+  List<Widget> _optionCards({
+    required List<ConfigOption> options,
+    required String? selected,
+    required ValueChanged<String> onSelect,
+    required IconData icon,
+  }) {
+    return options.asMap().entries.map((entry) {
+      final o = entry.value;
+      return AppSelectableOptionCard(
+        label: o.label,
+        description: o.description,
+        icon: icon,
+        selected: selected == o.key,
+        animationIndex: entry.key,
+        onTap: () => onSelect(o.key),
+      );
+    }).toList();
   }
 }
 
@@ -250,10 +285,17 @@ class _StepJd extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
+        Text(
+          'Mô tả công việc',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         TextField(
           maxLines: 5,
           decoration: const InputDecoration(
-            labelText: 'Mô tả công việc / JD',
+            labelText: 'JD / mô tả vị trí',
             hintText: 'Nhập mô tả vị trí ứng tuyển...',
           ),
           onChanged: notifier.setJdDescription,
@@ -261,6 +303,7 @@ class _StepJd extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         AppPrimaryButton(
           label: 'Tạo JD bằng AI',
+          icon: Icons.auto_awesome,
           isLoading: state.isGeneratingJd,
           onPressed: state.isGeneratingJd
               ? null
@@ -268,9 +311,11 @@ class _StepJd extends ConsumerWidget {
                   try {
                     await notifier.generateJd();
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
-                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
+                    }
                   }
                 },
         ),
@@ -278,13 +323,15 @@ class _StepJd extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             'Preview JD',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(state.generatedJr.toString()),
+          AppGlassSurface(
+            child: Text(
+              state.generatedJr.toString(),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
             ),
           ),
         ],
