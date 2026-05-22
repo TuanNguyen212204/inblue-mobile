@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
+import 'package:inblue_mobile/design_system/tokens/app_radius.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/candidate_profile.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_setup_notifier.dart';
@@ -61,17 +64,44 @@ class _SetupProfileStepState extends ConsumerState<SetupProfileStep> {
   Widget build(BuildContext context) {
     final state = ref.watch(aiInterviewSetupNotifierProvider).requireValue;
     final notifier = ref.read(aiInterviewSetupNotifierProvider.notifier);
+    final scheme = Theme.of(context).colorScheme;
 
     if (state.isLoadingProfile) {
-      return const Padding(
-        padding: EdgeInsets.all(AppSpacing.md),
-        child: AppShimmerCard(height: 200),
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
+        children: const [
+          AppShimmerCard(height: 220),
+        ],
       );
     }
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xl,
+      ),
       children: [
+        Text(
+          'Hồ sơ ứng viên',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Tải CV PDF hoặc nhập thủ công — lưu hồ sơ để tiếp tục bước 3',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.7),
+              ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
         if (state.hasExistingProfile && !state.isEditingProfile)
           _ProfileSummaryCard(
             profile: state.existingProfile!,
@@ -132,53 +162,82 @@ class _ProfileSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
+    final scheme = Theme.of(context).colorScheme;
+
+    return AppGlassSurface(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.verified_user_rounded, color: scheme.primary, size: 22),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
                   'Hồ sơ hiện tại',
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: const Text('Chỉnh sửa'),
-                ),
-              ],
+              ),
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_rounded, size: 18),
+                label: const Text('Chỉnh sửa'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _InfoRow(label: 'Vị trí', value: profile.targetRole ?? '—'),
+          const SizedBox(height: AppSpacing.sm),
+          _InfoRow(label: 'Cấp độ', value: profile.targetLevel ?? '—'),
+          if (profile.introduction != null && profile.introduction!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              profile.introduction!,
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text('Vị trí: ${profile.targetRole ?? '—'}'),
-            Text('Cấp độ: ${profile.targetLevel ?? '—'}'),
-            if (profile.introduction != null && profile.introduction!.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                profile.introduction!,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-            if (profile.technicalSkills.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: profile.technicalSkills
-                    .map((s) => Chip(label: Text(s), visualDensity: VisualDensity.compact))
-                    .toList(),
-              ),
-            ],
           ],
-        ),
+          if (profile.technicalSkills.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _SkillChips(skills: profile.technicalSkills),
+          ],
+        ],
       ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.04);
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 72,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -196,19 +255,25 @@ class _NoProfileActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     if (isUploading) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg),
-          child: Center(
-            child: Column(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 12),
-                Text('Đang phân tích CV...'),
-              ],
+      return AppGlassSurface(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+        child: Column(
+          children: [
+            CircularProgressIndicator(color: scheme.primary),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Đang phân tích CV...',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-          ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'AI đang trích xuất thông tin từ PDF',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
         ),
       );
     }
@@ -216,41 +281,48 @@ class _NoProfileActions extends StatelessWidget {
     return Column(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _ActionTile(
-                icon: Icons.upload_file,
+                icon: Icons.upload_file_rounded,
                 title: 'Tải CV lên',
                 subtitle: 'PDF — tự động điền',
-                color: Colors.teal,
+                accent: scheme.primary,
                 onTap: onUpload,
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _ActionTile(
-                icon: Icons.edit_note,
+                icon: Icons.edit_note_rounded,
                 title: 'Nhập thủ công',
-                subtitle: 'Tự điền form',
-                color: Colors.deepPurple,
+                subtitle: 'Điền form chi tiết',
+                accent: scheme.secondary,
                 onTap: onManual,
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        Card(
-          color: Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.3),
-          child: const Padding(
-            padding: EdgeInsets.all(AppSpacing.md),
-            child: Text(
-              'Bạn chưa có hồ sơ. Tải CV hoặc nhập thủ công, sau đó nhấn Lưu hồ sơ để tiếp tục.',
-              style: TextStyle(fontSize: 13),
-            ),
+        const SizedBox(height: AppSpacing.lg),
+        AppGlassSurface(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline_rounded, color: scheme.primary, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Bạn chưa có hồ sơ. Tải CV hoặc nhập thủ công, sau đó nhấn Lưu hồ sơ để tiếp tục.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+                ),
+              ),
+            ],
           ),
         ),
       ],
-    );
+    ).animate().fadeIn(duration: 400.ms);
   }
 }
 
@@ -259,32 +331,51 @@ class _ActionTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.color,
+    required this.accent,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
-  final Color color;
+  final Color accent;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+        borderRadius: AppRadius.card,
+        child: AppGlassSurface(
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             children: [
-              Icon(icon, size: 36, color: color),
-              const SizedBox(height: 8),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text(subtitle, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, size: 28, color: accent),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
         ),
@@ -363,116 +454,157 @@ class _EditFormState extends State<_EditForm> {
   @override
   Widget build(BuildContext context) {
     final f = widget.form;
+    final scheme = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        OutlinedButton.icon(
-          onPressed: widget.isUploading ? null : widget.onUploadCv,
-          icon: widget.isUploading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.upload_file),
-          label: const Text('Tải CV PDF để tự điền'),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        TextField(
-          controller: _roleCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Vị trí mục tiêu *',
-            hintText: 'VD: Flutter Developer',
+    return AppGlassSurface(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OutlinedButton.icon(
+            onPressed: widget.isUploading ? null : widget.onUploadCv,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              side: BorderSide(color: scheme.primary.withValues(alpha: 0.5)),
+            ),
+            icon: widget.isUploading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: scheme.primary,
+                    ),
+                  )
+                : Icon(Icons.upload_file_rounded, color: scheme.primary),
+            label: const Text('Tải CV PDF để tự điền'),
           ),
-          onChanged: (_) => _emit(),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        TextField(
-          controller: _levelCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Cấp độ',
-            hintText: 'Intern, Fresher, Junior...',
+          const SizedBox(height: AppSpacing.lg),
+          _FormField(
+            controller: _roleCtrl,
+            label: 'Vị trí mục tiêu *',
+            hint: 'VD: Flutter Developer',
+            onChanged: (_) => _emit(),
           ),
-          onChanged: (_) => _emit(),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        TextField(
-          controller: _introCtrl,
-          maxLines: 4,
-          decoration: const InputDecoration(
-            labelText: 'Giới thiệu bản thân *',
+          const SizedBox(height: AppSpacing.md),
+          _FormField(
+            controller: _levelCtrl,
+            label: 'Cấp độ',
+            hint: 'Intern, Fresher, Junior...',
+            onChanged: (_) => _emit(),
           ),
-          onChanged: (_) => _emit(),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _SkillEditor(
-          label: 'Kỹ năng kỹ thuật',
-          chips: f.technicalSkills,
-          controller: widget.techCtrl,
-          onAdd: () => _addSkill(
-            widget.techCtrl,
-            f.technicalSkills,
-            (list) => widget.onChanged(f.copyWith(technicalSkills: list)),
+          const SizedBox(height: AppSpacing.md),
+          _FormField(
+            controller: _introCtrl,
+            label: 'Giới thiệu bản thân *',
+            maxLines: 4,
+            onChanged: (_) => _emit(),
           ),
-          onRemove: (i) {
-            final list = [...f.technicalSkills]..removeAt(i);
-            widget.onChanged(f.copyWith(technicalSkills: list));
-            _emit();
-          },
-        ),
-        _SkillEditor(
-          label: 'Kỹ năng mềm',
-          chips: f.softSkills,
-          controller: widget.softCtrl,
-          onAdd: () => _addSkill(
-            widget.softCtrl,
-            f.softSkills,
-            (list) => widget.onChanged(f.copyWith(softSkills: list)),
+          const SizedBox(height: AppSpacing.lg),
+          _SkillEditor(
+            label: 'Kỹ năng kỹ thuật',
+            chips: f.technicalSkills,
+            controller: widget.techCtrl,
+            onAdd: () => _addSkill(
+              widget.techCtrl,
+              f.technicalSkills,
+              (list) => widget.onChanged(f.copyWith(technicalSkills: list)),
+            ),
+            onRemove: (i) {
+              final list = [...f.technicalSkills]..removeAt(i);
+              widget.onChanged(f.copyWith(technicalSkills: list));
+              _emit();
+            },
           ),
-          onRemove: (i) {
-            final list = [...f.softSkills]..removeAt(i);
-            widget.onChanged(f.copyWith(softSkills: list));
-            _emit();
-          },
-        ),
-        _SkillEditor(
-          label: 'Công cụ',
-          chips: f.tools,
-          controller: widget.toolCtrl,
-          onAdd: () => _addSkill(
-            widget.toolCtrl,
-            f.tools,
-            (list) => widget.onChanged(f.copyWith(tools: list)),
+          _SkillEditor(
+            label: 'Kỹ năng mềm',
+            chips: f.softSkills,
+            controller: widget.softCtrl,
+            onAdd: () => _addSkill(
+              widget.softCtrl,
+              f.softSkills,
+              (list) => widget.onChanged(f.copyWith(softSkills: list)),
+            ),
+            onRemove: (i) {
+              final list = [...f.softSkills]..removeAt(i);
+              widget.onChanged(f.copyWith(softSkills: list));
+              _emit();
+            },
           ),
-          onRemove: (i) {
-            final list = [...f.tools]..removeAt(i);
-            widget.onChanged(f.copyWith(tools: list));
-            _emit();
-          },
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Row(
-          children: [
-            if (widget.onCancel != null)
+          _SkillEditor(
+            label: 'Công cụ',
+            chips: f.tools,
+            controller: widget.toolCtrl,
+            onAdd: () => _addSkill(
+              widget.toolCtrl,
+              f.tools,
+              (list) => widget.onChanged(f.copyWith(tools: list)),
+            ),
+            onRemove: (i) {
+              final list = [...f.tools]..removeAt(i);
+              widget.onChanged(f.copyWith(tools: list));
+              _emit();
+            },
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              if (widget.onCancel != null)
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: widget.isSaving ? null : widget.onCancel,
+                    child: const Text('Hủy'),
+                  ),
+                ),
+              if (widget.onCancel != null) const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: widget.isSaving ? null : widget.onCancel,
-                  child: const Text('Hủy'),
+                flex: 2,
+                child: AppPrimaryButton(
+                  label: 'Lưu hồ sơ',
+                  icon: Icons.save_rounded,
+                  isLoading: widget.isSaving,
+                  onPressed: f.canSave && !widget.isSaving ? widget.onSave : null,
                 ),
               ),
-            if (widget.onCancel != null) const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              flex: 2,
-              child: AppPrimaryButton(
-                label: 'Lưu hồ sơ',
-                isLoading: widget.isSaving,
-                onPressed: f.canSave && !widget.isSaving ? widget.onSave : null,
-              ),
-            ),
-          ],
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 350.ms);
+  }
+}
+
+class _FormField extends StatelessWidget {
+  const _FormField({
+    required this.controller,
+    required this.label,
+    this.hint,
+    this.maxLines = 1,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String? hint;
+  final int maxLines;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
         ),
-      ],
+        border: OutlineInputBorder(borderRadius: AppRadius.button),
+      ),
     );
   }
 }
@@ -494,43 +626,93 @@ class _SkillEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (var i = 0; i < chips.length; i++)
-                InputChip(
-                  label: Text(chips[i]),
-                  onDeleted: () => onRemove(i),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
-            ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
+          if (chips.isNotEmpty)
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (var i = 0; i < chips.length; i++)
+                  Chip(
+                    label: Text(chips[i]),
+                    deleteIcon: const Icon(Icons.close_rounded, size: 16),
+                    onDeleted: () => onRemove(i),
+                    backgroundColor: scheme.primary.withValues(alpha: 0.1),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+              ],
+            ),
+          if (chips.isNotEmpty) const SizedBox(height: AppSpacing.sm),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: TextField(
                   controller: controller,
                   decoration: InputDecoration(
-                    hintText: 'Nhập và nhấn Thêm',
+                    hintText: 'Nhập kỹ năng, nhấn Thêm',
                     isDense: true,
+                    filled: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.md,
+                    ),
+                    border: OutlineInputBorder(borderRadius: AppRadius.button),
                   ),
                   onSubmitted: (_) => onAdd(),
                 ),
               ),
-              const SizedBox(width: 8),
-              TextButton(onPressed: onAdd, child: const Text('Thêm')),
+              const SizedBox(width: AppSpacing.sm),
+              FilledButton.tonal(
+                onPressed: onAdd,
+                child: const Text('Thêm'),
+              ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SkillChips extends StatelessWidget {
+  const _SkillChips({required this.skills});
+
+  final List<String> skills;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: skills
+          .map(
+            (s) => Chip(
+              label: Text(s),
+              backgroundColor: scheme.primary.withValues(alpha: 0.1),
+              side: BorderSide.none,
+            ),
+          )
+          .toList(),
     );
   }
 }
