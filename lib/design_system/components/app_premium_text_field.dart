@@ -17,6 +17,8 @@ class AppPremiumTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.autofillHints,
     this.animationIndex = 0,
+    this.maxLines,
+    this.minLines,
   });
 
   final TextEditingController controller;
@@ -30,6 +32,8 @@ class AppPremiumTextField extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final Iterable<String>? autofillHints;
   final int animationIndex;
+  final int? maxLines;
+  final int? minLines;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +48,8 @@ class AppPremiumTextField extends StatelessWidget {
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
       autofillHints: autofillHints,
+      maxLines: maxLines,
+      minLines: minLines,
       style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
