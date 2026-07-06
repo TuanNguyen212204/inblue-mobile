@@ -11,6 +11,7 @@ import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/user_account.dart';
 import 'package:inblue_mobile/features/profile/presentation/providers/account_notifier.dart';
 import 'package:inblue_mobile/features/profile/presentation/utils/profile_ui_utils.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PersonalInfoTab extends ConsumerStatefulWidget {
   const PersonalInfoTab({required this.user, super.key});
@@ -77,6 +78,28 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
     setState(() => _pendingAvatar = File(picked.path));
   }
 
+  Future<void> _removeAvatar() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xóa ảnh đại diện'),
+        content: const Text('Bạn có chắc muốn xóa ảnh đại diện hiện tại?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _pendingAvatar = null);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
@@ -86,12 +109,24 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
         university: _universityCtrl.text.trim(),
         major: _major,
       );
-      await ref.read(accountNotifierProvider.notifier).updatePersonal(
+      final result = await ref.read(accountNotifierProvider.notifier).updatePersonal(
             user: updated,
             avatarFile: _pendingAvatar,
           );
-      if (mounted) {
-        setState(() => _pendingAvatar = null);
+      if (!mounted) return;
+      final avatarChanged = _pendingAvatar != null ||
+          widget.user.avatarUrl != result.avatarUrl;
+      setState(() => _pendingAvatar = null);
+      if (avatarChanged) {
+        final serverAvatar = result.avatarUrl;
+        if (serverAvatar == null || serverAvatar.isEmpty) {
+          ProfileUiUtils.showToast(context, 'Đã xóa ảnh đại diện');
+        } else if (widget.user.avatarUrl != serverAvatar) {
+          ProfileUiUtils.showToast(context, 'Đã cập nhật ảnh đại diện');
+        } else {
+          ProfileUiUtils.showToast(context, 'Ảnh đại diện chưa thay đổi');
+        }
+      } else {
         ProfileUiUtils.showToast(context, 'Đã cập nhật thông tin cá nhân');
       }
     } catch (e) {
@@ -141,10 +176,24 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
     }
   }
 
+  Future<void> _previewCv() async {
+    final cvUrl = widget.user.cvUrl;
+    if (cvUrl == null || cvUrl.isEmpty) return;
+    final uri = Uri.tryParse(cvUrl);
+    if (uri == null || !await canLaunchUrl(uri)) {
+      if (!mounted) {
+        ProfileUiUtils.showToast(context, 'Không mở được CV', isError: true);
+      }
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final avatarUrl = widget.user.avatarUrl;
+    final cvUrl = widget.user.cvUrl;
 
     return Form(
       key: _formKey,
@@ -194,6 +243,18 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
               ),
             ),
           ).animate().scale(begin: const Offset(0.92, 0.92)),
+          if (_pendingAvatar != null)
+            TextButton.icon(
+              onPressed: _removeAvatar,
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              label: const Text('Xóa ảnh đã chọn'),
+            ),
+          if (cvUrl != null && cvUrl.isNotEmpty)
+            TextButton.icon(
+              onPressed: _previewCv,
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              label: const Text('Xem CV đã lưu'),
+            ),
           const SizedBox(height: AppSpacing.xs),
           Center(
             child: Text(

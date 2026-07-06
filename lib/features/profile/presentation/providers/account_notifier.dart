@@ -92,6 +92,17 @@ class AccountNotifier extends AsyncNotifier<AccountBundle> {
     return updated;
   }
 
+  Future<UserAccount> removeAvatar({required UserAccount user}) async {
+    final updated =
+        await ref.read(profileRepositoryProvider).updateUser(
+              user: user,
+              avatarFile: null,
+            );
+    _patchUser(updated);
+    await ref.read(authNotifierProvider.notifier).refreshUserProfile();
+    return updated;
+  }
+
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
@@ -12,8 +13,10 @@ import 'package:inblue_mobile/features/profile/presentation/widgets/membership_t
 import 'package:inblue_mobile/features/profile/presentation/widgets/personal_info_tab.dart';
 import 'package:inblue_mobile/features/profile/presentation/widgets/transactions_tab.dart';
 import 'package:inblue_mobile/features/profile/presentation/widgets/wallet_tab.dart';
+import 'package:inblue_mobile/features/profile/presentation/utils/profile_ui_utils.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Full account hub — parity guide Part G (User/Candidate).
 class AccountPage extends ConsumerStatefulWidget {
@@ -49,6 +52,12 @@ class _AccountPageState extends ConsumerState<AccountPage>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    await ref.read(accountNotifierProvider.notifier).refresh();
+    if (!mounted) return;
+    await ref.read(authNotifierProvider.notifier).refreshUserProfile();
   }
 
   @override
@@ -114,6 +123,66 @@ class _AccountPageState extends ConsumerState<AccountPage>
                   child: AccountSummaryCard(
                     user: bundle.user,
                     planLabel: planLabel,
+                    onPreviewCv: bundle.user.cvUrl != null && bundle.user.cvUrl!.isNotEmpty
+                        ? () async {
+                            final uri = Uri.tryParse(bundle.user.cvUrl!);
+                            if (uri == null || !await canLaunchUrl(uri)) {
+                              if (!mounted) return;
+                              ProfileUiUtils.showToast(
+                                context,
+                                'Không mở được CV',
+                                isError: true,
+                              );
+                              return;
+                            }
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        : null,
+                    onRemoveAvatar: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Xóa ảnh đại diện'),
+                          content: const Text(
+                            'Bạn có chắc muốn xóa ảnh đại diện hiện tại?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Hủy'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('Xóa'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true) return;
+                      try {
+                        final updated = await ref
+                            .read(accountNotifierProvider.notifier)
+                            .removeAvatar(user: bundle.user);
+                        if (!mounted) return;
+                        await _refresh();
+                        if (updated.avatarUrl == null || updated.avatarUrl!.isEmpty) {
+                          ProfileUiUtils.showToast(context, 'Đã xóa ảnh đại diện');
+                        } else {
+                          ProfileUiUtils.showToast(
+                            context,
+                            'Xóa ảnh đại diện thất bại',
+                            isError: true,
+                          );
+                        }
+                      } catch (e) {
+                        if (!mounted) return;
+                        ProfileUiUtils.showToast(
+                          context,
+                          ProfileUiUtils.stripExceptionPrefix(e),
+                          isError: true,
+                        );
+                      }
+                    },
                   ),
                 ),
               ),
@@ -133,20 +202,20 @@ class _AccountPageState extends ConsumerState<AccountPage>
               controller: _tabController,
               children: [
                 RefreshIndicator(
-                  onRefresh: () => ref.read(accountNotifierProvider.notifier).refresh(),
+                  onRefresh: () => _refresh(),
                   child: PersonalInfoTab(user: bundle.user),
                 ),
                 RefreshIndicator(
-                  onRefresh: () => ref.read(accountNotifierProvider.notifier).refresh(),
+                  onRefresh: () => _refresh(),
                   child: WalletTab(user: bundle.user),
                 ),
                 TransactionsTab(transactions: bundle.transactions),
                 RefreshIndicator(
-                  onRefresh: () => ref.read(accountNotifierProvider.notifier).refresh(),
+                  onRefresh: () => _refresh(),
                   child: CandidateProfileTab(profile: bundle.candidate),
                 ),
                 RefreshIndicator(
-                  onRefresh: () => ref.read(accountNotifierProvider.notifier).refresh(),
+                  onRefresh: () => _refresh(),
                   child: MembershipTab(
                     user: bundle.user,
                     plans: bundle.plans,

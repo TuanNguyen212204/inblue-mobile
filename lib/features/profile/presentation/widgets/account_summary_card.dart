@@ -4,15 +4,20 @@ import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/user_account.dart';
 import 'package:inblue_mobile/features/profile/presentation/utils/profile_ui_utils.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AccountSummaryCard extends StatelessWidget {
   const AccountSummaryCard({
     required this.user,
+    required this.onPreviewCv,
+    required this.onRemoveAvatar,
     required this.planLabel,
     super.key,
   });
 
   final UserAccount user;
+  final VoidCallback? onPreviewCv;
+  final VoidCallback? onRemoveAvatar;
   final String planLabel;
 
   @override
@@ -23,17 +28,48 @@ class AccountSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
-          _Avatar(url: user.avatarUrl, name: user.displayName),
+          Stack(
+            children: [
+              _Avatar(url: user.avatarUrl, name: user.displayName),
+              if (onRemoveAvatar != null)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: IconButton.filled(
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(6),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: onRemoveAvatar,
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user.displayName,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        user.displayName,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
+                    ),
+                    if (onPreviewCv != null)
+                      TextButton.icon(
+                        onPressed: user.cvUrl != null && user.cvUrl!.isNotEmpty
+                            ? onPreviewCv
+                            : null,
+                        icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                        label: const Text('Xem CV'),
+                      ),
+                  ],
                 ),
                 if (user.email.contains('@')) ...[
                   const SizedBox(height: 4),

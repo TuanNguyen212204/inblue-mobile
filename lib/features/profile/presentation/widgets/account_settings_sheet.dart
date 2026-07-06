@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inblue_mobile/core/providers/app_settings_provider.dart';
 import 'package:inblue_mobile/core/providers/theme_mode_provider.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
@@ -20,6 +21,7 @@ class _AccountSettingsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final appSettings = ref.watch(appSettingsProvider);
     final bottom = MediaQuery.paddingOf(context).bottom;
 
     return Padding(
@@ -68,6 +70,55 @@ class _AccountSettingsSheet extends ConsumerWidget {
                 ref.read(themeModeProvider.notifier).setThemeMode(s.first),
           ),
           const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Cỡ chữ',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SegmentedButton<double>(
+            segments: const [
+              ButtonSegment(
+                value: -1,
+                label: Text('Nhỏ'),
+              ),
+              ButtonSegment(
+                value: 0,
+                label: Text('Mặc định'),
+              ),
+              ButtonSegment(
+                value: 2,
+                label: Text('Lớn'),
+              ),
+            ],
+            selected: {appSettings.fontSizeScale},
+            onSelectionChanged: (s) =>
+                ref.read(appSettingsProvider.notifier).setFontSizeScale(s.first),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Thông báo',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Tắt thông báo'),
+            subtitle: const Text('Ẩn toast và heads-up mới'),
+            value: appSettings.notificationMute,
+            onChanged: (v) => ref
+                .read(appSettingsProvider.notifier)
+                .setNotificationMute(v),
+          ),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Tắt âm thông báo'),
+            subtitle: const Text('Giữ hiển thị nhưng không phát âm thanh'),
+            value: appSettings.notificationSoundMute,
+            onChanged: (v) => ref
+                .read(appSettingsProvider.notifier)
+                .setNotificationSoundMute(v),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           FilledButton.tonal(
             onPressed: () async {
               final confirmed = await showDialog<bool>(
@@ -93,8 +144,6 @@ class _AccountSettingsSheet extends ConsumerWidget {
               Navigator.pop(context);
               await ref.read(authNotifierProvider.notifier).logout();
               ref.invalidate(accountNotifierProvider);
-              // GoRouter redirect sends user to /login — do not context.go here
-              // (avoids race while auth flag still true → bounce back to /user).
             },
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
