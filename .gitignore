@@ -48,16 +48,19 @@ assets/env/.env
 
 # Hive
 *.hive
-*.lock
 
 # Android
+/android/app/build/
+/android/build/
 /android/app/debug
 /android/app/profile
 /android/app/release
+**/android/**/.gradle/
 **/android/**/local.properties
 **/android/**/key.properties
 **/android/**/*.jks
 **/android/**/*.keystore
+**/android/**/*.lock
 
 # iOS
 **/ios/Pods/
@@ -78,6 +81,9 @@ test-results/
 
 # FVM
 .fvm/
+
+# DevTools / debug artifacts
+devtools_options.yaml
 
 # Private / local-only (do not push to remote)
 INBLUE_MOBILE_GUIDE.md
