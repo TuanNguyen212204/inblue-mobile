@@ -7,6 +7,7 @@ import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_se
 import 'package:inblue_mobile/features/ai_interview/domain/entities/practice_set.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_providers.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/widgets/select_roadmap_dialog.dart';
+import 'package:inblue_mobile/core/extensions/exception_x.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
 
@@ -51,7 +52,7 @@ class _AiInterviewResultPageState extends ConsumerState<AiInterviewResultPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text(e.toUserMessage())),
         );
       }
     } finally {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
+import 'package:inblue_mobile/core/extensions/exception_x.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:inblue_mobile/features/mock_interview/presentation/providers/mock_interview_providers.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
@@ -58,7 +59,7 @@ class MockSessionDetailPage extends ConsumerWidget {
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
+                        SnackBar(content: Text(e.toUserMessage())),
                       );
                     }
                   }
@@ -88,7 +89,7 @@ class MockSessionDetailPage extends ConsumerWidget {
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
+                        SnackBar(content: Text(e.toUserMessage())),
                       );
                     }
                   }

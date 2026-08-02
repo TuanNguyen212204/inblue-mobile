@@ -10,6 +10,7 @@ import 'package:inblue_mobile/design_system/components/app_selectable_option_car
 import 'package:inblue_mobile/design_system/layout/app_content_safe_area.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_models.dart';
+import 'package:inblue_mobile/core/extensions/exception_x.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_setup_notifier.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/widgets/setup_profile_step.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
@@ -144,7 +145,7 @@ class AiInterviewSetupPage extends ConsumerWidget {
         context.go(RoutePaths.aiInterviewSessionPath(sessionKey));
       }
     } catch (e) {
-      if (context.mounted) _toast(context, e.toString());
+      if (context.mounted) _toast(context, e.toUserMessage());
     }
   }
 
@@ -328,7 +329,7 @@ class _StepJd extends ConsumerWidget {
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
+                        SnackBar(content: Text(e.toUserMessage())),
                       );
                     }
                   }

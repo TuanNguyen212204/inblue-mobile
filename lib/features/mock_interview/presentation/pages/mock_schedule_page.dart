@@ -9,6 +9,7 @@ import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/components/app_selectable_option_card.dart';
 import 'package:inblue_mobile/design_system/layout/app_content_safe_area.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
+import 'package:inblue_mobile/core/extensions/exception_x.dart';
 import 'package:inblue_mobile/features/mock_interview/domain/entities/mentor.dart';
 import 'package:inblue_mobile/features/mock_interview/presentation/providers/mock_schedule_notifier.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
@@ -155,7 +156,7 @@ class MockSchedulePage extends ConsumerWidget {
         }
       }
     } catch (e) {
-      if (context.mounted) _snack(context, e.toString());
+      if (context.mounted) _snack(context, e.toUserMessage());
     }
   }
 

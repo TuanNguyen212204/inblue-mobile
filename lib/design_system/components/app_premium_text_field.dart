@@ -48,7 +48,7 @@ class AppPremiumTextField extends StatelessWidget {
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
       autofillHints: autofillHints,
-      maxLines: maxLines,
+      maxLines: obscureText ? 1 : maxLines,
       minLines: minLines,
       style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(

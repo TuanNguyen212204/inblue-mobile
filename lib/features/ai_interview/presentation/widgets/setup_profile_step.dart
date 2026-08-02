@@ -9,6 +9,7 @@ import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_radius.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/candidate_profile.dart';
+import 'package:inblue_mobile/core/extensions/exception_x.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_setup_notifier.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
 
@@ -54,7 +55,7 @@ class _SetupProfileStepState extends ConsumerState<SetupProfileStep> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text(e.toUserMessage())),
         );
       }
     }
@@ -136,7 +137,7 @@ class _SetupProfileStepState extends ConsumerState<SetupProfileStep> {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString())),
+                    SnackBar(content: Text(e.toUserMessage())),
                   );
                 }
               }
