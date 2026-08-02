@@ -10,10 +10,10 @@ class AiInterviewRemoteDataSource {
   final Dio _dio;
 
   Future<InterviewConfigOptions> getConfigOptions() async {
-    final res = await _dio.get<Map<String, dynamic>>(
+    final res = await _dio.get<dynamic>(
       ApiPaths.interviewConfigOptions,
     );
-    return InterviewConfigOptions.fromJson(res.data ?? {});
+    return InterviewConfigOptions.fromJson(_unwrapMap(res.data));
   }
 
   Future<Map<String, dynamic>> generateJobRequirement(String description) async {
@@ -22,8 +22,7 @@ class AiInterviewRemoteDataSource {
       data: description,
       options: Options(contentType: 'application/json'),
     );
-    if (res.data is Map<String, dynamic>) return res.data as Map<String, dynamic>;
-    return {};
+    return _unwrapMap(res.data);
   }
 
   Future<String> createSession(Map<String, dynamic> body) async {
@@ -40,40 +39,68 @@ class AiInterviewRemoteDataSource {
   }
 
   Future<List<InterviewSession>> getSessionsByUser(int userId) async {
-    final res = await _dio.get<List<dynamic>>(
+    final res = await _dio.get<dynamic>(
       ApiPaths.interviewSessionsByUser(userId),
     );
-    return (res.data ?? [])
-        .map((e) => InterviewSession.fromJson(e as Map<String, dynamic>))
+    return _unwrapList(res.data)
+        .map((e) => InterviewSession.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<InterviewSession> getSessionById(int id) async {
-    final res = await _dio.get<Map<String, dynamic>>(
+    final res = await _dio.get<dynamic>(
       ApiPaths.interviewSessionById(id),
     );
-    return InterviewSession.fromJson(res.data ?? {});
+    return InterviewSession.fromJson(_unwrapMap(res.data));
   }
 
   Future<Map<String, dynamic>> getCache(String sessionKey) async {
-    final res = await _dio.get<Map<String, dynamic>>(
+    final res = await _dio.get<dynamic>(
       ApiPaths.interviewCache(sessionKey),
     );
-    return res.data ?? {};
+    return _unwrapMap(res.data);
   }
 
   Future<QuestionResponse> startInterview(String sessionKey) async {
-    final res = await _dio.get<Map<String, dynamic>>(
+    final res = await _dio.get<dynamic>(
       ApiPaths.interviewStart(sessionKey),
     );
-    return QuestionResponse.fromJson(res.data ?? {});
+    return QuestionResponse.fromJson(_unwrapMap(res.data));
   }
 
   Future<List<Map<String, dynamic>>> getPracticeSetsByInterview(int sessionId) async {
-    final res = await _dio.get<List<dynamic>>(
+    final res = await _dio.get<dynamic>(
       ApiPaths.practiceSetsByInterview(sessionId),
     );
-    return (res.data ?? []).cast<Map<String, dynamic>>();
+    return _unwrapList(res.data)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+  }
+
+  List<dynamic> _unwrapList(dynamic data) {
+    if (data is List) return data;
+    if (data is Map) {
+      for (final key in ['data', 'content', 'items', 'sessions']) {
+        final nested = data[key];
+        if (nested is List) return nested;
+      }
+    }
+    return const [];
+  }
+
+  Map<String, dynamic> _unwrapMap(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final nested = data['data'];
+      if (nested is Map<String, dynamic>) return nested;
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return data;
+    }
+    if (data is Map) {
+      final nested = data['data'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return Map<String, dynamic>.from(data);
+    }
+    return {};
   }
 
   Future<List<Map<String, dynamic>>> createPracticeSetByAi({

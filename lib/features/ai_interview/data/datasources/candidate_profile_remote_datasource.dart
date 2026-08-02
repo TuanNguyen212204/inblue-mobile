@@ -12,10 +12,12 @@ class CandidateProfileRemoteDataSource {
 
   Future<CandidateProfile?> getByUserId(int userId) async {
     try {
-      final res = await _dio.get<Map<String, dynamic>>(
+      final res = await _dio.get<dynamic>(
         ApiPaths.candidateProfile(userId),
       );
-      return CandidateProfile.fromJson(res.data ?? {});
+      final map = _unwrapMap(res.data);
+      if (map.isEmpty) return null;
+      return CandidateProfile.fromJson(map);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
       throw Exception(ErrorNormalizer.fromDio(e));
@@ -24,11 +26,11 @@ class CandidateProfileRemoteDataSource {
 
   Future<CandidateProfile> createProfile(CandidateProfile profile) async {
     try {
-      final res = await _dio.post<Map<String, dynamic>>(
+      final res = await _dio.post<dynamic>(
         ApiPaths.candidateProfiles,
         data: profile.toJson(userId: profile.userId!, forCreate: true),
       );
-      return CandidateProfile.fromJson(res.data ?? {});
+      return CandidateProfile.fromJson(_unwrapMap(res.data));
     } on DioException catch (e) {
       throw Exception(ErrorNormalizer.fromDio(e));
     }
@@ -36,14 +38,29 @@ class CandidateProfileRemoteDataSource {
 
   Future<CandidateProfile> updateProfile(CandidateProfile profile) async {
     try {
-      final res = await _dio.put<Map<String, dynamic>>(
+      final res = await _dio.put<dynamic>(
         ApiPaths.candidateProfiles,
         data: profile.toJson(userId: profile.userId!),
       );
-      return CandidateProfile.fromJson(res.data ?? {});
+      return CandidateProfile.fromJson(_unwrapMap(res.data));
     } on DioException catch (e) {
       throw Exception(ErrorNormalizer.fromDio(e));
     }
+  }
+
+  Map<String, dynamic> _unwrapMap(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final nested = data['data'] ?? data['result'] ?? data['profile'];
+      if (nested is Map<String, dynamic>) return nested;
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return data;
+    }
+    if (data is Map) {
+      final nested = data['data'] ?? data['result'] ?? data['profile'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return Map<String, dynamic>.from(data);
+    }
+    return {};
   }
 
   /// Multipart: `userId` as JSON blob + `cvFile` PDF only (parity web).

@@ -163,8 +163,17 @@ class ProfileRemoteDataSource {
   }
 
   Map<String, dynamic> _unwrapMap(dynamic data) {
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) return Map<String, dynamic>.from(data);
+    if (data is Map<String, dynamic>) {
+      final nested = data['data'] ?? data['user'] ?? data['result'];
+      if (nested is Map<String, dynamic>) return nested;
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return data;
+    }
+    if (data is Map) {
+      final nested = data['data'] ?? data['user'] ?? data['result'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return Map<String, dynamic>.from(data);
+    }
     return {};
   }
 
