@@ -54,13 +54,38 @@ class AccountNotifier extends AsyncNotifier<AccountBundle> {
 
   Future<AccountBundle> _load(int userId) async {
     final repo = ref.read(profileRepositoryProvider);
+    final authUser = ref.read(authNotifierProvider).valueOrNull?.user;
+
+    final userAccountFuture = repo.getUser(userId).catchError((_) {
+      if (authUser != null) {
+        return UserAccount(
+          id: authUser.id,
+          email: authUser.email,
+          name: authUser.name,
+          role: authUser.role,
+        );
+      }
+      return UserAccount(id: userId, email: '');
+    });
+
+    final txsFuture = repo
+        .getTransactions(userId)
+        .catchError((_) => <WalletTransaction>[]);
+    final plansFuture =
+        repo.getMembershipPlans().catchError((_) => <MembershipPlan>[]);
+    final subFuture =
+        repo.getSubscription(userId).catchError((_) => UserSubscription());
+    final candFuture =
+        repo.getCandidateProfile(userId).catchError((_) => null);
+
     final results = await Future.wait([
-      repo.getUser(userId),
-      repo.getTransactions(userId),
-      repo.getMembershipPlans(),
-      repo.getSubscription(userId),
-      repo.getCandidateProfile(userId),
+      userAccountFuture,
+      txsFuture,
+      plansFuture,
+      subFuture,
+      candFuture,
     ]);
+
     return AccountBundle(
       user: results[0] as UserAccount,
       transactions: results[1] as List<WalletTransaction>,
