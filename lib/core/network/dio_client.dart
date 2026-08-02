@@ -4,6 +4,7 @@ import 'package:inblue_mobile/core/config/app_config.dart';
 import 'package:inblue_mobile/core/config/env_config.dart';
 import 'package:inblue_mobile/core/network/interceptors/auth_interceptor.dart';
 import 'package:inblue_mobile/core/network/interceptors/logging_interceptor.dart';
+import 'package:inblue_mobile/core/network/interceptors/response_unwrap_interceptor.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
@@ -18,8 +19,10 @@ final dioProvider = Provider<Dio>((ref) {
 
   dio.interceptors.addAll([
     AuthInterceptor(ref),
+    ResponseUnwrapInterceptor(),
     if (EnvConfig.debugCurl) LoggingInterceptor(),
   ]);
 
   return dio;
 });
+
