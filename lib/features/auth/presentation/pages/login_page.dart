@@ -9,6 +9,8 @@ import 'package:inblue_mobile/design_system/components/app_premium_text_field.da
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_colors.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
+import 'package:inblue_mobile/core/errors/exceptions.dart';
+import 'package:inblue_mobile/core/extensions/exception_x.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -40,8 +42,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!mounted) return;
     final err = ref.read(authNotifierProvider).error;
     if (err != null) {
+      final msg = err is AppException ? err.message : err.toUserMessage();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err.toString())),
+        SnackBar(content: Text(msg)),
       );
       return;
     }
