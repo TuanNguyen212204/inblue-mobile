@@ -92,6 +92,9 @@ docs/private/
 *.local.md
 .local/
 
+lib/core/network/generated/doc/
+lib/core/network/generated/test/
+
 # IDE / Cursor (local agent config)
 .cursor/
 .agent/
