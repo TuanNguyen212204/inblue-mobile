@@ -4,11 +4,18 @@ echo "🚀 Generating Dart API Client & DTOs from Backend Swagger..."
 
 cd "$(dirname "$0")/.."
 
+curl -s -u "thuson@gmail.com:12345" https://api.kdz.asia/v3/api-docs -o api-docs.json
+
 npx @openapitools/openapi-generator-cli generate \
-  -i https://api.kdz.asia/v3/api-docs \
+  -i api-docs.json \
   -g dart-dio \
   -o lib/core/network/generated \
-  --additional-properties=pubName=inblue_api,nullableFields=true
+  --additional-properties=pubName=inblue_api
+
+echo "🚀 Building generated Dart models with build_runner..."
+cd lib/core/network/generated
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
 
 echo "✅ Done! Code generated at lib/core/network/generated"
 
