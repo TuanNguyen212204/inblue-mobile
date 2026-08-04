@@ -121,18 +121,11 @@ class _AiInterviewRoomPageState extends ConsumerState<AiInterviewRoomPage> {
             ),
           AiRoomPhase.expired || AiRoomPhase.error => _EndState(
               message: room.errorMessage ?? 'Phiên không khả dụng',
-              actionLabel: 'Tạo buổi mới',
-              onAction: () => context.go(RoutePaths.aiInterviewSetup),
+              actionLabel: 'Nhập SessionKey khác',
+              onAction: () => context.go(RoutePaths.kioskEntry),
             ),
-          AiRoomPhase.finished => _EndState(
-              message: 'Phỏng vấn hoàn tất!',
-              actionLabel: 'Xem kết quả chi tiết',
-              onAction: () {
-                final id = room.dbId;
-                if (id != null) {
-                  context.go(RoutePaths.aiInterviewResultPath(id));
-                }
-              },
+          AiRoomPhase.finished => KioskInterviewFinishedState(
+              onAutoReturn: () => context.go(RoutePaths.kioskEntry),
             ),
           _ => Column(
               children: [
@@ -171,8 +164,69 @@ class _AiInterviewRoomPageState extends ConsumerState<AiInterviewRoomPage> {
     );
     if (ok == true && context.mounted) {
       await KioskModeService.exit();
-      context.go(RoutePaths.aiInterviewList);
+      if (!context.mounted) return;
+      context.go(RoutePaths.kioskEntry);
     }
+  }
+}
+
+class KioskInterviewFinishedState extends StatefulWidget {
+  const KioskInterviewFinishedState({
+    required this.onAutoReturn,
+    super.key,
+  });
+
+  final VoidCallback onAutoReturn;
+
+  @override
+  State<KioskInterviewFinishedState> createState() =>
+      _KioskInterviewFinishedStateState();
+}
+
+class _KioskInterviewFinishedStateState
+    extends State<KioskInterviewFinishedState> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(seconds: 3), () {
+      if (mounted) widget.onAutoReturn();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.celebration_outlined,
+              size: 64,
+              color: scheme.primary,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Phỏng vấn hoàn tất!',
+              textAlign: TextAlign.center,
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Đang quay về màn hình chính...',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium,
+            ),
+          ],
+        ).animate().fadeIn().slideY(begin: 0.06),
+      ),
+    );
   }
 }
 
