@@ -1,21 +1,19 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/config/app_config.dart';
+import 'package:inblue_mobile/core/errors/exceptions.dart';
+import 'package:inblue_mobile/core/extensions/exception_x.dart';
+import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/components/app_gradient_mesh_background.dart';
 import 'package:inblue_mobile/design_system/components/app_premium_text_field.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_colors.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
-import 'package:inblue_mobile/core/errors/exceptions.dart';
-import 'package:inblue_mobile/core/extensions/exception_x.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
-
-import 'package:go_router/go_router.dart';
-import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -35,11 +33,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill credentials in debug mode to ease testing
-    if (kDebugMode) {
-      _emailCtrl.text = 'binhan@gmail.com';
-      _passwordCtrl.text = '123';
-    }
   }
 
   @override
@@ -58,7 +51,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        SnackBar(
+            content: Text(e.toString()), behavior: SnackBarBehavior.floating),
       );
     }
   }
@@ -80,7 +74,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(AppSpacing.md),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           backgroundColor: cs.errorContainer,
           content: Row(
             children: [
@@ -89,7 +84,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Expanded(
                 child: Text(
                   msg,
-                  style: TextStyle(color: cs.onErrorContainer, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: cs.onErrorContainer, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -108,7 +104,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final errorMessage = auth.error != null
-        ? (auth.error is AppException ? (auth.error as AppException).message : auth.error!.toUserMessage())
+        ? (auth.error is AppException
+            ? (auth.error as AppException).message
+            : auth.error!.toUserMessage())
         : null;
 
     return Scaffold(
@@ -132,131 +130,141 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  _BrandHeader(scheme: scheme, isDark: isDark),
-                  const SizedBox(height: AppSpacing.sectionGap),
-                  AppGlassSurface(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Đăng nhập',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            'Tiếp tục hành trình phỏng vấn của bạn',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (errorMessage != null) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            Container(
-                              padding: const EdgeInsets.all(AppSpacing.sm),
-                              decoration: BoxDecoration(
-                                color: scheme.errorContainer.withValues(alpha: 0.8),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: scheme.error),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.warning_amber_rounded, color: scheme.onErrorContainer, size: 20),
-                                  const SizedBox(width: AppSpacing.xs),
-                                  Expanded(
-                                    child: Text(
-                                      errorMessage,
-                                      style: TextStyle(
-                                        color: scheme.onErrorContainer,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _BrandHeader(scheme: scheme, isDark: isDark),
+                      const SizedBox(height: AppSpacing.sectionGap),
+                      AppGlassSurface(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Đăng nhập',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w700,
                                     ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'Tiếp tục hành trình phỏng vấn của bạn',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              if (errorMessage != null) ...[
+                                const SizedBox(height: AppSpacing.md),
+                                Container(
+                                  padding: const EdgeInsets.all(AppSpacing.sm),
+                                  decoration: BoxDecoration(
+                                    color: scheme.errorContainer
+                                        .withValues(alpha: 0.8),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: scheme.error),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.warning_amber_rounded,
+                                          color: scheme.onErrorContainer,
+                                          size: 20),
+                                      const SizedBox(width: AppSpacing.xs),
+                                      Expanded(
+                                        child: Text(
+                                          errorMessage,
+                                          style: TextStyle(
+                                            color: scheme.onErrorContainer,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: AppSpacing.lg),
+                              AppPremiumTextField(
+                                controller: _emailCtrl,
+                                label: 'Email',
+                                prefixIcon: Icons.alternate_email_rounded,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                autofillHints: const [AutofillHints.email],
+                                animationIndex: 0,
+                                validator: (v) => v == null || v.isEmpty
+                                    ? 'Vui lòng nhập email'
+                                    : null,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              AppPremiumTextField(
+                                controller: _passwordCtrl,
+                                label: 'Mật khẩu',
+                                prefixIcon: Icons.lock_outline_rounded,
+                                obscureText: _obscurePassword,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => setState(() =>
+                                      _obscurePassword = !_obscurePassword),
+                                ),
+                                textInputAction: TextInputAction.done,
+                                autofillHints: const [AutofillHints.password],
+                                animationIndex: 1,
+                                onFieldSubmitted: (_) => _submit(),
+                                validator: (v) => v == null || v.isEmpty
+                                    ? 'Vui lòng nhập mật khẩu'
+                                    : null,
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () =>
+                                      context.push(RoutePaths.forgotPassword),
+                                  child: const Text('Quên mật khẩu?'),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              AppPrimaryButton(
+                                label: 'Đăng nhập',
+                                icon: Icons.arrow_forward_rounded,
+                                isLoading: isLoading,
+                                onPressed: isLoading ? null : _submit,
+                              ).animate().fadeIn(delay: 320.ms).scale(
+                                    begin: const Offset(0.96, 0.96),
+                                    curve: Curves.easeOutBack,
+                                  ),
+                              const SizedBox(height: AppSpacing.md),
+                              OutlinedButton.icon(
+                                onPressed: isLoading ? null : _loginWithGoogle,
+                                icon: const Icon(Icons.g_mobiledata_rounded,
+                                    size: 28),
+                                label: const Text('Đăng nhập bằng Google'),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text('Chưa có tài khoản?'),
+                                  TextButton(
+                                    onPressed: () =>
+                                        context.push(RoutePaths.signup),
+                                    child: const Text('Đăng ký ngay'),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                          const SizedBox(height: AppSpacing.lg),
-                          AppPremiumTextField(
-                            controller: _emailCtrl,
-                            label: 'Email',
-                            prefixIcon: Icons.alternate_email_rounded,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.email],
-                            animationIndex: 0,
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Vui lòng nhập email' : null,
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          AppPremiumTextField(
-                            controller: _passwordCtrl,
-                            label: 'Mật khẩu',
-                            prefixIcon: Icons.lock_outline_rounded,
-                            obscureText: _obscurePassword,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                size: 20,
-                              ),
-                              onPressed: () =>
-                                  setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                            textInputAction: TextInputAction.done,
-                            autofillHints: const [AutofillHints.password],
-                            animationIndex: 1,
-                            onFieldSubmitted: (_) => _submit(),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Vui lòng nhập mật khẩu' : null,
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () => context.push(RoutePaths.forgotPassword),
-                              child: const Text('Quên mật khẩu?'),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          AppPrimaryButton(
-                            label: 'Đăng nhập',
-                            icon: Icons.arrow_forward_rounded,
-                            isLoading: isLoading,
-                            onPressed: isLoading ? null : _submit,
-                          ).animate().fadeIn(delay: 320.ms).scale(
-                                begin: const Offset(0.96, 0.96),
-                                curve: Curves.easeOutBack,
-                              ),
-                          const SizedBox(height: AppSpacing.md),
-                          OutlinedButton.icon(
-                            onPressed: isLoading ? null : _loginWithGoogle,
-                            icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                            label: const Text('Đăng nhập bằng Google'),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text('Chưa có tài khoản?'),
-                              TextButton(
-                                onPressed: () => context.push(RoutePaths.signup),
-                                child: const Text('Đăng ký ngay'),
-                              ),
                             ],
                           ),
-
-                        ],
-                      ),
-                    ),
-                  ).animate().fadeIn(duration: 500.ms).slideY(
-                        begin: 0.05,
-                        curve: Curves.easeOutCubic,
-                      ),
+                        ),
+                      ).animate().fadeIn(duration: 500.ms).slideY(
+                            begin: 0.05,
+                            curve: Curves.easeOutCubic,
+                          ),
                     ],
                   ),
                   Text(
@@ -308,7 +316,8 @@ class _BrandHeader extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.waves_rounded, color: Colors.white, size: 36),
+            child:
+                const Icon(Icons.waves_rounded, color: Colors.white, size: 36),
           ),
         ).animate().scale(
               begin: const Offset(0.85, 0.85),
@@ -330,7 +339,10 @@ class _BrandHeader extends StatelessWidget {
           'Phỏng vấn thông minh cho ứng viên',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.75),
               ),
         ).animate().fadeIn(delay: 120.ms, duration: 400.ms),
       ],
