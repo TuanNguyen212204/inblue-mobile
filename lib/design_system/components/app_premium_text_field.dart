@@ -10,6 +10,7 @@ class AppPremiumTextField extends StatelessWidget {
     this.label,
     this.hint,
     this.prefixIcon,
+    this.suffixIcon,
     this.obscureText = false,
     this.keyboardType,
     this.validator,
@@ -25,6 +26,7 @@ class AppPremiumTextField extends StatelessWidget {
   final String? label;
   final String? hint;
   final IconData? prefixIcon;
+  final Widget? suffixIcon;
   final bool obscureText;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
@@ -55,6 +57,7 @@ class AppPremiumTextField extends StatelessWidget {
         labelText: label,
         hintText: hint,
         prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 22) : null,
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: scheme.surface.withValues(alpha: isDark ? 0.6 : 0.95),
         contentPadding: const EdgeInsets.symmetric(
