@@ -155,5 +155,5 @@ class HttpStatus extends EnumClass {
 /// corresponding Angular template.
 ///
 /// Trigger mixin generation by writing a line like this one next to your enum.
-abstract class HttpStatusMixin = Object with _$HttpStatusMixin;
+// abstract class HttpStatusMixin = Object with _$HttpStatusMixin;
 

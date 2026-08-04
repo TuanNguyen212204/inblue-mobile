@@ -14,6 +14,7 @@ final dioProvider = Provider<Dio>((ref) {
       receiveTimeout: AppConfig.apiTimeout,
       sendTimeout: AppConfig.apiTimeout,
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      responseType: ResponseType.plain,
     ),
   );
 
