@@ -12,6 +12,10 @@ class UserAccount extends Equatable {
     this.publicId,
     this.university,
     this.major,
+    this.phone,
+    this.address,
+    this.linkedinUrl,
+    this.githubUrl,
     this.cvUrl,
     this.cvPublicId,
     this.walletBalance = 0,
@@ -26,6 +30,10 @@ class UserAccount extends Equatable {
   final String? publicId;
   final String? university;
   final String? major;
+  final String? phone;
+  final String? address;
+  final String? linkedinUrl;
+  final String? githubUrl;
   final String? cvUrl;
   final String? cvPublicId;
   final double walletBalance;
@@ -52,6 +60,10 @@ class UserAccount extends Equatable {
       publicId: json['public_id'] as String? ?? json['publicId'] as String?,
       university: json['university'] as String?,
       major: json['major'] as String?,
+      phone: json['phone'] as String?,
+      address: json['address'] as String?,
+      linkedinUrl: json['linkedinUrl'] as String? ?? json['linkedin'] as String?,
+      githubUrl: json['githubUrl'] as String? ?? json['github'] as String?,
       cvUrl: json['cvUrl'] as String?,
       cvPublicId: json['cv_public_id'] as String? ?? json['cvPublicId'] as String?,
       walletBalance: JsonCoercion.asDouble(json['walletBalance']) ?? 0,
@@ -65,6 +77,10 @@ class UserAccount extends Equatable {
     String? publicId,
     String? university,
     String? major,
+    String? phone,
+    String? address,
+    String? linkedinUrl,
+    String? githubUrl,
     String? cvUrl,
     String? cvPublicId,
     double? walletBalance,
@@ -79,6 +95,10 @@ class UserAccount extends Equatable {
         publicId: publicId ?? this.publicId,
         university: university ?? this.university,
         major: major ?? this.major,
+        phone: phone ?? this.phone,
+        address: address ?? this.address,
+        linkedinUrl: linkedinUrl ?? this.linkedinUrl,
+        githubUrl: githubUrl ?? this.githubUrl,
         cvUrl: cvUrl ?? this.cvUrl,
         cvPublicId: cvPublicId ?? this.cvPublicId,
         walletBalance: walletBalance ?? this.walletBalance,
@@ -90,6 +110,10 @@ class UserAccount extends Equatable {
         'name': name,
         'university': university,
         'major': major,
+        'phone': phone,
+        'address': address,
+        'linkedinUrl': linkedinUrl,
+        'githubUrl': githubUrl,
         'public_id': publicId ?? '',
         'cv_public_id': cvPublicId ?? '',
       };

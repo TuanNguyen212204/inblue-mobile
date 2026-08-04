@@ -10,6 +10,8 @@ import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/user_account.dart';
 import 'package:inblue_mobile/features/profile/presentation/providers/account_notifier.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/features/profile/presentation/utils/profile_ui_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,25 +28,25 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   late final TextEditingController _universityCtrl;
-  late final TextEditingController _currentPwdCtrl;
-  late final TextEditingController _newPwdCtrl;
-  late final TextEditingController _confirmPwdCtrl;
+  late final TextEditingController _phoneCtrl;
+  late final TextEditingController _addressCtrl;
+  late final TextEditingController _linkedinCtrl;
+  late final TextEditingController _githubCtrl;
 
   String? _major;
   File? _pendingAvatar;
   bool _isSaving = false;
-  bool _isChangingPwd = false;
-  bool _showPasswordSection = false;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.user.name ?? '');
     _universityCtrl = TextEditingController(text: widget.user.university ?? '');
+    _phoneCtrl = TextEditingController(text: widget.user.phone ?? '');
+    _addressCtrl = TextEditingController(text: widget.user.address ?? '');
+    _linkedinCtrl = TextEditingController(text: widget.user.linkedinUrl ?? '');
+    _githubCtrl = TextEditingController(text: widget.user.githubUrl ?? '');
     _major = widget.user.major;
-    _currentPwdCtrl = TextEditingController();
-    _newPwdCtrl = TextEditingController();
-    _confirmPwdCtrl = TextEditingController();
   }
 
   @override
@@ -53,6 +55,10 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
     if (oldWidget.user.id != widget.user.id) {
       _nameCtrl.text = widget.user.name ?? '';
       _universityCtrl.text = widget.user.university ?? '';
+      _phoneCtrl.text = widget.user.phone ?? '';
+      _addressCtrl.text = widget.user.address ?? '';
+      _linkedinCtrl.text = widget.user.linkedinUrl ?? '';
+      _githubCtrl.text = widget.user.githubUrl ?? '';
       _major = widget.user.major;
       _pendingAvatar = null;
     }
@@ -62,9 +68,10 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
   void dispose() {
     _nameCtrl.dispose();
     _universityCtrl.dispose();
-    _currentPwdCtrl.dispose();
-    _newPwdCtrl.dispose();
-    _confirmPwdCtrl.dispose();
+    _phoneCtrl.dispose();
+    _addressCtrl.dispose();
+    _linkedinCtrl.dispose();
+    _githubCtrl.dispose();
     super.dispose();
   }
 
@@ -107,6 +114,10 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
       final updated = widget.user.copyWith(
         name: _nameCtrl.text.trim(),
         university: _universityCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+        address: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
+        linkedinUrl: _linkedinCtrl.text.trim().isEmpty ? null : _linkedinCtrl.text.trim(),
+        githubUrl: _githubCtrl.text.trim().isEmpty ? null : _githubCtrl.text.trim(),
         major: _major,
       );
       final result = await ref.read(accountNotifierProvider.notifier).updatePersonal(
@@ -142,39 +153,6 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
     }
   }
 
-  Future<void> _changePassword() async {
-    if (_newPwdCtrl.text.length < 6) {
-      ProfileUiUtils.showToast(context, 'Mật khẩu mới tối thiểu 6 ký tự', isError: true);
-      return;
-    }
-    if (_newPwdCtrl.text != _confirmPwdCtrl.text) {
-      ProfileUiUtils.showToast(context, 'Xác nhận mật khẩu không khớp', isError: true);
-      return;
-    }
-    setState(() => _isChangingPwd = true);
-    try {
-      await ref.read(accountNotifierProvider.notifier).changePassword(
-            currentPassword: _currentPwdCtrl.text,
-            newPassword: _newPwdCtrl.text,
-          );
-      _currentPwdCtrl.clear();
-      _newPwdCtrl.clear();
-      _confirmPwdCtrl.clear();
-      if (mounted) {
-        ProfileUiUtils.showToast(context, 'Đã đổi mật khẩu thành công');
-      }
-    } catch (e) {
-      if (mounted) {
-        ProfileUiUtils.showToast(
-          context,
-          ProfileUiUtils.stripExceptionPrefix(e),
-          isError: true,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isChangingPwd = false);
-    }
-  }
 
   Future<void> _previewCv() async {
     final cvUrl = widget.user.cvUrl;
@@ -193,7 +171,6 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final avatarUrl = widget.user.avatarUrl;
-    final cvUrl = widget.user.cvUrl;
 
     return Form(
       key: _formKey,
@@ -249,12 +226,6 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
               icon: const Icon(Icons.delete_outline_rounded, size: 18),
               label: const Text('Xóa ảnh đã chọn'),
             ),
-          if (cvUrl != null && cvUrl.isNotEmpty)
-            TextButton.icon(
-              onPressed: _previewCv,
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-              label: const Text('Xem CV đã lưu'),
-            ),
           const SizedBox(height: AppSpacing.xs),
           Center(
             child: Text(
@@ -279,6 +250,33 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
             prefixIcon: Icons.school_outlined,
           ),
           const SizedBox(height: AppSpacing.md),
+          AppPremiumTextField(
+            controller: _phoneCtrl,
+            label: 'Số điện thoại',
+            prefixIcon: Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppPremiumTextField(
+            controller: _addressCtrl,
+            label: 'Địa chỉ',
+            prefixIcon: Icons.location_on_outlined,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppPremiumTextField(
+            controller: _linkedinCtrl,
+            label: 'LinkedIn URL',
+            prefixIcon: Icons.link_rounded,
+            keyboardType: TextInputType.url,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppPremiumTextField(
+            controller: _githubCtrl,
+            label: 'GitHub URL',
+            prefixIcon: Icons.code_rounded,
+            keyboardType: TextInputType.url,
+          ),
+          const SizedBox(height: AppSpacing.md),
           Text('Chuyên ngành', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<String>(
@@ -296,68 +294,77 @@ class _PersonalInfoTabState extends ConsumerState<PersonalInfoTab> {
             onChanged: (v) => setState(() => _major = v),
           ),
           const SizedBox(height: AppSpacing.lg),
+          // CV Upload Section
           AppGlassSurface(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                InkWell(
-                  onTap: () => setState(() => _showPasswordSection = !_showPasswordSection),
-                  child: Row(
-                    children: [
-                      Icon(Icons.lock_outline, color: scheme.primary),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          'Đổi mật khẩu',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
+                Text(
+                  'CV / Hồ sơ',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                      Icon(
-                        _showPasswordSection
-                            ? Icons.expand_less
-                            : Icons.expand_more,
-                      ),
-                    ],
-                  ),
                 ),
-                if (_showPasswordSection) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  AppPremiumTextField(
-                    controller: _currentPwdCtrl,
-                    label: 'Mật khẩu hiện tại',
-                    obscureText: true,
-                    prefixIcon: Icons.key_outlined,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  AppPremiumTextField(
-                    controller: _newPwdCtrl,
-                    label: 'Mật khẩu mới',
-                    obscureText: true,
-                    prefixIcon: Icons.lock_reset_outlined,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  AppPremiumTextField(
-                    controller: _confirmPwdCtrl,
-                    label: 'Xác nhận mật khẩu mới',
-                    obscureText: true,
-                    prefixIcon: Icons.verified_user_outlined,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  OutlinedButton(
-                    onPressed: _isChangingPwd ? null : _changePassword,
-                    child: _isChangingPwd
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Cập nhật mật khẩu'),
-                  ),
-                ],
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Tính năng tải CV đang được phát triển'),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.upload_file_rounded, size: 18),
+                        label: const Text('Tải lên CV'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đang phân tích CV bằng AI...'),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.auto_awesome, size: 18),
+                        label: const Text('Phân tích AI'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (widget.user.cvUrl != null && widget.user.cvUrl!.isNotEmpty) ...
+                  [
+                    const SizedBox(height: AppSpacing.sm),
+                    TextButton.icon(
+                      onPressed: _previewCv,
+                      icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                      label: const Text('Xem CV đã lưu'),
+                    ),
+                  ],
               ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppGlassSurface(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.lock_outline, color: scheme.primary),
+              title: Text(
+                'Đổi mật khẩu',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              subtitle: const Text('Cập nhật mật khẩu bảo mật tài khoản'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push(RoutePaths.changePassword),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

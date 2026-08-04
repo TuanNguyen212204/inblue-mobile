@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
@@ -9,10 +8,8 @@ import 'package:inblue_mobile/features/profile/presentation/providers/account_no
 import 'package:inblue_mobile/features/profile/presentation/widgets/account_settings_sheet.dart';
 import 'package:inblue_mobile/features/profile/presentation/widgets/account_summary_card.dart';
 import 'package:inblue_mobile/features/profile/presentation/widgets/candidate_profile_tab.dart';
-import 'package:inblue_mobile/features/profile/presentation/widgets/membership_tab.dart';
+import 'package:inblue_mobile/features/profile/presentation/widgets/jd_purchases_tab.dart';
 import 'package:inblue_mobile/features/profile/presentation/widgets/personal_info_tab.dart';
-import 'package:inblue_mobile/features/profile/presentation/widgets/transactions_tab.dart';
-import 'package:inblue_mobile/features/profile/presentation/widgets/wallet_tab.dart';
 import 'package:inblue_mobile/features/profile/presentation/utils/profile_ui_utils.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
@@ -30,12 +27,13 @@ class _AccountPageState extends ConsumerState<AccountPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  // Phase 4: 4 web-parity tabs for Candidate role.
+  // Wallet and Membership tabs are hidden (Decision 3).
   static const _tabs = [
-    Tab(text: 'Cá nhân'),
-    Tab(text: 'Ví'),
-    Tab(text: 'Lịch sử'),
     Tab(text: 'Hồ sơ UV'),
-    Tab(text: 'Gói'),
+    Tab(text: 'Lịch sử mua JD'),
+    Tab(text: 'Cá nhân'),
+    Tab(text: 'Cài đặt'),
   ];
 
   @override
@@ -107,7 +105,7 @@ class _AccountPageState extends ConsumerState<AccountPage>
               SliverToBoxAdapter(
                 child: AppCompactHeader(
                   title: 'Tài khoản',
-                  subtitle: 'Hồ sơ · Ví · Gói thành viên',
+                  subtitle: 'Hồ sơ · Lịch sử · Cài đặt',
                   actions: [
                     IconButton(
                       tooltip: 'Cài đặt',
@@ -201,32 +199,101 @@ class _AccountPageState extends ConsumerState<AccountPage>
             body: TabBarView(
               controller: _tabController,
               children: [
-                RefreshIndicator(
-                  onRefresh: () => _refresh(),
-                  child: PersonalInfoTab(user: bundle.user),
-                ),
-                RefreshIndicator(
-                  onRefresh: () => _refresh(),
-                  child: WalletTab(user: bundle.user),
-                ),
-                TransactionsTab(transactions: bundle.transactions),
+                // Tab 0: Hồ sơ Ứng viên
                 RefreshIndicator(
                   onRefresh: () => _refresh(),
                   child: CandidateProfileTab(profile: bundle.candidate),
                 ),
+                // Tab 1: Lịch sử mua JD
+                JdPurchasesTab(purchases: bundle.jdPurchases),
+                // Tab 2: Cá nhân
                 RefreshIndicator(
                   onRefresh: () => _refresh(),
-                  child: MembershipTab(
-                    user: bundle.user,
-                    plans: bundle.plans,
-                    subscription: bundle.subscription,
-                  ),
+                  child: PersonalInfoTab(user: bundle.user),
                 ),
+                // Tab 3: Cài đặt
+                _SettingsTab(onRefresh: _refresh),
               ],
             ),
           );
         },
       ),
+    );
+  }
+}
+
+/// Settings tab — quick actions for candidate: Đăng xuất, Đổi mật khẩu, etc.
+class _SettingsTab extends ConsumerWidget {
+  const _SettingsTab({required this.onRefresh});
+
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      children: [
+        const SizedBox(height: AppSpacing.sm),
+        Card(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('Đổi mật khẩu'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => showAccountSettingsSheet(context, ref),
+              ),
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: const Text('Thông báo'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {},
+              ),
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.language_outlined),
+                title: const Text('Ngôn ngữ'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.logout_rounded,
+                color: Theme.of(context).colorScheme.error),
+            title: Text(
+              'Đăng xuất',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600),
+            ),
+            onTap: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Xác nhận đăng xuất'),
+                  content: const Text('Bạn có muốn đăng xuất khỏi tài khoản?'),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Hủy')),
+                    FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Đăng xuất')),
+                  ],
+                ),
+              );
+              if (ok == true && context.mounted) {
+                ref.read(authNotifierProvider.notifier).logout();
+              }
+            },
+          ),
+        ),
+      ],
     );
   }
 }

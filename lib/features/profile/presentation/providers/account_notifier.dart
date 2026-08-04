@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/candidate_profile.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:inblue_mobile/features/profile/domain/entities/jd_purchase.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/membership_plan.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/user_account.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/wallet_transaction.dart';
@@ -12,6 +13,7 @@ class AccountBundle {
   AccountBundle({
     required this.user,
     required this.transactions,
+    required this.jdPurchases,
     required this.plans,
     required this.subscription,
     this.candidate,
@@ -19,6 +21,7 @@ class AccountBundle {
 
   final UserAccount user;
   final List<WalletTransaction> transactions;
+  final List<JdPurchase> jdPurchases;
   final List<MembershipPlan> plans;
   final UserSubscription subscription;
   final CandidateProfile? candidate;
@@ -26,6 +29,7 @@ class AccountBundle {
   AccountBundle copyWith({
     UserAccount? user,
     List<WalletTransaction>? transactions,
+    List<JdPurchase>? jdPurchases,
     List<MembershipPlan>? plans,
     UserSubscription? subscription,
     CandidateProfile? candidate,
@@ -33,6 +37,7 @@ class AccountBundle {
       AccountBundle(
         user: user ?? this.user,
         transactions: transactions ?? this.transactions,
+        jdPurchases: jdPurchases ?? this.jdPurchases,
         plans: plans ?? this.plans,
         subscription: subscription ?? this.subscription,
         candidate: candidate ?? this.candidate,
@@ -71,6 +76,9 @@ class AccountNotifier extends AsyncNotifier<AccountBundle> {
     final txsFuture = repo
         .getTransactions(userId)
         .catchError((_) => <WalletTransaction>[]);
+    final jdPurchasesFuture = repo
+        .getJdPurchases()
+        .catchError((_) => <JdPurchase>[]);
     final plansFuture =
         repo.getMembershipPlans().catchError((_) => <MembershipPlan>[]);
     final subFuture =
@@ -81,6 +89,7 @@ class AccountNotifier extends AsyncNotifier<AccountBundle> {
     final results = await Future.wait([
       userAccountFuture,
       txsFuture,
+      jdPurchasesFuture,
       plansFuture,
       subFuture,
       candFuture,
@@ -89,9 +98,10 @@ class AccountNotifier extends AsyncNotifier<AccountBundle> {
     return AccountBundle(
       user: results[0] as UserAccount,
       transactions: results[1] as List<WalletTransaction>,
-      plans: results[2] as List<MembershipPlan>,
-      subscription: results[3] as UserSubscription,
-      candidate: results[4] as CandidateProfile?,
+      jdPurchases: results[2] as List<JdPurchase>,
+      plans: results[3] as List<MembershipPlan>,
+      subscription: results[4] as UserSubscription,
+      candidate: results[5] as CandidateProfile?,
     );
   }
 
