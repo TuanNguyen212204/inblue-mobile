@@ -202,14 +202,14 @@ class _AiRoomStageState extends State<AiRoomStage> {
             transform: Matrix4.rotationY(3.14159), // horizontal flip
             child: CameraPreview(_cameraController!),
           ),
-          Positioned(
+          const Positioned(
             bottom: 3,
             left: 0,
             right: 0,
             child: Text(
               'Bạn',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white70,
                 fontSize: 9,
                 fontWeight: FontWeight.w500,

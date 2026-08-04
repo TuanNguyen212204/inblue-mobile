@@ -35,9 +35,11 @@ class InterviewSpeechService {
   }) async {
     if (!_initialized) await init();
     await _stt.listen(
-      localeId: locale,
       onResult: (r) => onResult(r.recognizedWords),
-      listenMode: ListenMode.confirmation,
+      listenOptions: SpeechListenOptions(
+        localeId: locale,
+        listenMode: ListenMode.confirmation,
+      ),
     );
   }
 

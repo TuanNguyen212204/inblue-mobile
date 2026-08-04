@@ -10,11 +10,11 @@ class AiTypingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _Dot(delay: 0),
+        const _Dot(delay: 0),
         const SizedBox(width: 4),
-        _Dot(delay: 200),
+        const _Dot(delay: 200),
         const SizedBox(width: 4),
-        _Dot(delay: 400),
+        const _Dot(delay: 400),
         const SizedBox(width: 8),
         Flexible(
           child: Text(
