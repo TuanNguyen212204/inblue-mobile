@@ -86,7 +86,7 @@ class AuthNotifier extends AsyncNotifier<AuthSession?> {
         id: id,
         email: AuthUser.readEmailFrom(payload),
         name: AuthUser.readDisplayNameFrom(payload),
-        role: (payload['role'] ?? 'USER') as String,
+        role: AuthUser.readRoleFrom(payload),
       ),
     );
   }

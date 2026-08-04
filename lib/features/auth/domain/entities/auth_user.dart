@@ -18,7 +18,7 @@ class AuthUser extends Equatable {
         id: (json['id'] as num?)?.toInt() ?? 0,
         email: readEmailFrom(json),
         name: readDisplayNameFrom(json),
-        role: json['role'] as String? ?? 'USER',
+        role: readRoleFrom(json),
       );
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser.fromApiJson(json);
@@ -51,6 +51,17 @@ class AuthUser extends Equatable {
       return '${first ?? ''} ${last ?? ''}'.trim();
     }
     return null;
+  }
+
+  static String readRoleFrom(Map<String, dynamic> json) {
+    final role = json['role'];
+    if (role is String && role.trim().isNotEmpty) return role.trim();
+    final roles = json['roles'];
+    if (roles is List && roles.isNotEmpty) {
+      final first = roles.first.toString().replaceAll('ROLE_', '').trim();
+      if (first.isNotEmpty) return first;
+    }
+    return 'USER';
   }
 
   Map<String, dynamic> toJson() => {

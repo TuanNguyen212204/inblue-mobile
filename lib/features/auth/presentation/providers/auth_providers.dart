@@ -6,8 +6,13 @@ import 'package:inblue_mobile/features/auth/data/datasources/user_remote_datasou
 import 'package:inblue_mobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:inblue_mobile/features/auth/domain/repositories/auth_repository.dart';
 
+import 'package:inblue_mobile/core/network/api_client_provider.dart';
+
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
-  return AuthRemoteDataSourceImpl(ref.watch(dioProvider));
+  return AuthRemoteDataSourceImpl(
+    ref.watch(authControllerApiProvider),
+    ref.watch(dioProvider),
+  );
 });
 
 final userRemoteDataSourceProvider = Provider<UserRemoteDataSource>((ref) {
