@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:inblue_mobile/features/ai_interview/data/datasources/candidate_profile_remote_datasource.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/candidate_profile.dart';
 import 'package:inblue_mobile/features/profile/data/datasources/profile_remote_datasource.dart';
+import 'package:inblue_mobile/features/profile/domain/entities/jd_purchase.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/membership_plan.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/user_account.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/wallet_transaction.dart';
@@ -37,6 +38,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<List<WalletTransaction>> getTransactions(int userId) =>
       _profile.getTransactions(userId);
+
+  @override
+  Future<List<JdPurchase>> getJdPurchases() => _profile.getJdPurchases();
 
   @override
   Future<String> topUpWallet({required int amount, required int userId}) =>

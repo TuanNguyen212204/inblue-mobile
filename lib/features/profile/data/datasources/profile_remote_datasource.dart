@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:inblue_mobile/core/constants/api_paths.dart';
 import 'package:inblue_mobile/core/network/error_normalizer.dart';
+import 'package:inblue_mobile/features/profile/domain/entities/jd_purchase.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/membership_plan.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/user_account.dart';
 import 'package:inblue_mobile/features/profile/domain/entities/wallet_transaction.dart';
@@ -82,6 +83,18 @@ class ProfileRemoteDataSource {
           .where((t) => !t.shouldHideFromHistory)
           .toList()
         ..sort((a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
+    } on DioException catch (e) {
+      throw Exception(ErrorNormalizer.fromDio(e));
+    }
+  }
+
+  Future<List<JdPurchase>> getJdPurchases() async {
+    try {
+      final res = await _dio.get<dynamic>(ApiPaths.myJdPurchases);
+      final list = _unwrapList(res.data);
+      return list
+          .map((e) => JdPurchase.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
     } on DioException catch (e) {
       throw Exception(ErrorNormalizer.fromDio(e));
     }
