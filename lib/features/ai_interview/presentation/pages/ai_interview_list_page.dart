@@ -9,6 +9,7 @@ import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_session.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_list_notifier.dart';
+import 'package:inblue_mobile/features/ai_interview/presentation/utils/interview_label_helper.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_empty_state.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
@@ -217,29 +218,207 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        0,
-      ),
-      child: ListTile(
-        onTap: session.isCompleted ? onTap : null,
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          child: Icon(
-            session.isCompleted ? Icons.check_circle : Icons.schedule,
-            color: Theme.of(context).colorScheme.primary,
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final isClickable = session.canViewResult;
+    final statusColor = InterviewLabelHelper.statusColor(session.status, cs);
+    final statusBgColor = InterviewLabelHelper.statusBackgroundColor(session.status, cs);
+
+    final title = session.targetRole ??
+        InterviewLabelHelper.modeLabel(session.mode);
+    final dateStr = session.createdAt != null && session.createdAt!.length >= 10
+        ? session.createdAt!.substring(0, 10)
+        : '';
+
+    return Opacity(
+      opacity: isClickable ? 1.0 : 0.65,
+      child: Card(
+        margin: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          0,
+        ),
+        elevation: isClickable ? 1 : 0,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: isClickable ? onTap : null,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: statusBgColor,
+                      child: Icon(
+                        session.isCompleted
+                            ? Icons.check_circle_outline
+                            : (session.isCancelled
+                                ? Icons.cancel_outlined
+                                : (session.isExpired
+                                    ? Icons.timer_off_outlined
+                                    : Icons.schedule)),
+                        size: 20,
+                        color: statusColor,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (session.targetLevel != null &&
+                              session.targetLevel!.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              session.targetLevel!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.hintColor,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusBgColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            InterviewLabelHelper.statusLabel(session.status),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (session.overallScore != null) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade400),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 14,
+                                  color: Colors.amber,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${session.overallScore!.toStringAsFixed(1)} / 10',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: Colors.amber.shade900,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    if (session.domain != null)
+                      _TagBadge(
+                        label: InterviewLabelHelper.domainLabel(session.domain),
+                      ),
+                    _TagBadge(
+                      label: InterviewLabelHelper.modeLabel(session.mode),
+                    ),
+                    if (session.difficulty != null)
+                      _TagBadge(
+                        label: InterviewLabelHelper.difficultyLabel(session.difficulty),
+                      ),
+                    if (session.durationMinutes != null)
+                      _TagBadge(
+                        label: '⏱️ ${session.durationMinutes} phút',
+                      ),
+                    if (session.language != null)
+                      _TagBadge(
+                        label: InterviewLabelHelper.languageLabel(session.language),
+                      ),
+                  ],
+                ),
+                if (dateStr.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'Tạo ngày: $dateStr',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.hintColor,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
-        title: Text(session.mode ?? 'AI Interview'),
-        subtitle: Text(
-          '${session.status ?? ''} · ${session.createdAt?.substring(0, 10) ?? ''}',
+      ),
+    );
+  }
+}
+
+class _TagBadge extends StatelessWidget {
+  const _TagBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 11,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
-        trailing: session.overallScore != null
-            ? Chip(label: Text('${session.overallScore!.round()} đ'))
-            : null,
       ),
     );
   }

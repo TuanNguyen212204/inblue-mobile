@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/providers/app_settings_provider.dart';
 import 'package:inblue_mobile/core/providers/theme_mode_provider.dart';
+import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:inblue_mobile/features/profile/presentation/providers/account_notifier.dart';
@@ -42,6 +44,24 @@ class _AccountSettingsSheet extends ConsumerWidget {
                 ),
           ),
           const SizedBox(height: AppSpacing.md),
+          Text(
+            'Tài khoản',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Card(
+            margin: EdgeInsets.zero,
+            child: ListTile(
+              leading: const Icon(Icons.lock_outline),
+              title: const Text('Đổi mật khẩu'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(RoutePaths.changePassword);
+              },
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Giao diện',
             style: Theme.of(context).textTheme.titleSmall,

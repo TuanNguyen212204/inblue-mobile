@@ -51,6 +51,15 @@ class AiInterviewRemoteDataSource {
 
   Future<List<InterviewSession>> getSessionsByUser(int userId) async {
     try {
+      final raw = await _dio.get<dynamic>(ApiPaths.interviewSessionsByUser(userId));
+      final list = _parseList(raw.data);
+      if (list.isNotEmpty) {
+        return list
+            .map((e) => InterviewSession.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      }
+    } catch (_) {}
+    try {
       final res = await _api.getAllSessionsForUser(userId: userId);
       if (res.data != null) {
         return res.data!
@@ -68,10 +77,7 @@ class AiInterviewRemoteDataSource {
             .toList();
       }
     } catch (_) {}
-    final raw = await _dio.get<dynamic>(ApiPaths.interviewSessionsByUser(userId));
-    return _parseList(raw.data)
-        .map((e) => InterviewSession.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+    return [];
   }
 
   Future<InterviewSession> getSessionById(int id) async {

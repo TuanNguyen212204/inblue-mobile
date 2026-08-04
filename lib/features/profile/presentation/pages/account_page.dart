@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
@@ -29,13 +27,12 @@ class _AccountPageState extends ConsumerState<AccountPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Phase 4: 4 web-parity tabs for Candidate role.
-  // Wallet and Membership tabs are hidden (Decision 3).
+  // Phase 4: 3 web-parity tabs for Candidate role.
+  // Settings merged into settings sheet (top right gear icon).
   static const _tabs = [
     Tab(text: 'Hồ sơ UV'),
     Tab(text: 'Lịch sử mua JD'),
     Tab(text: 'Cá nhân'),
-    Tab(text: 'Cài đặt'),
   ];
 
   @override
@@ -107,7 +104,7 @@ class _AccountPageState extends ConsumerState<AccountPage>
               SliverToBoxAdapter(
                 child: AppCompactHeader(
                   title: 'Tài khoản',
-                  subtitle: 'Hồ sơ · Lịch sử · Cài đặt',
+                  subtitle: 'Hồ sơ · Lịch sử · Cá nhân',
                   actions: [
                     IconButton(
                       tooltip: 'Cài đặt',
@@ -213,89 +210,11 @@ class _AccountPageState extends ConsumerState<AccountPage>
                   onRefresh: () => _refresh(),
                   child: PersonalInfoTab(user: bundle.user),
                 ),
-                // Tab 3: Cài đặt
-                _SettingsTab(onRefresh: _refresh),
               ],
             ),
           );
         },
       ),
-    );
-  }
-}
-
-/// Settings tab — quick actions for candidate: Đăng xuất, Đổi mật khẩu, etc.
-class _SettingsTab extends ConsumerWidget {
-  const _SettingsTab({required this.onRefresh});
-
-  final Future<void> Function() onRefresh;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      children: [
-        const SizedBox(height: AppSpacing.sm),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.lock_outline),
-                title: const Text('Đổi mật khẩu'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(RoutePaths.changePassword),
-              ),
-              const Divider(height: 1, indent: 56),
-              ListTile(
-                leading: const Icon(Icons.notifications_outlined),
-                title: const Text('Thông báo'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {},
-              ),
-              const Divider(height: 1, indent: 56),
-              ListTile(
-                leading: const Icon(Icons.language_outlined),
-                title: const Text('Ngôn ngữ'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {},
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.logout_rounded,
-                color: Theme.of(context).colorScheme.error),
-            title: Text(
-              'Đăng xuất',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontWeight: FontWeight.w600),
-            ),
-            onTap: () async {
-              final ok = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Xác nhận đăng xuất'),
-                  content: const Text('Bạn có muốn đăng xuất khỏi tài khoản?'),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Hủy')),
-                    FilledButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Đăng xuất')),
-                  ],
-                ),
-              );
-              if (ok == true && context.mounted) {
-                ref.read(authNotifierProvider.notifier).logout();
-              }
-            },
-          ),
-        ),
-      ],
     );
   }
 }
