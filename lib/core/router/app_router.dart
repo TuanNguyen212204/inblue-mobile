@@ -1,193 +1,23 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
-import 'package:inblue_mobile/features/ai_interview/domain/entities/practice_set.dart';
-import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_list_page.dart';
-import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_result_page.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_room_page.dart';
-import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_setup_page.dart';
-import 'package:inblue_mobile/features/ai_interview/presentation/pages/practice_set_detail_page.dart';
-import 'package:inblue_mobile/features/auth/presentation/pages/forgot_password_page.dart';
-import 'package:inblue_mobile/features/auth/presentation/pages/login_page.dart';
-import 'package:inblue_mobile/features/auth/presentation/pages/reset_password_page.dart';
-import 'package:inblue_mobile/core/router/router_refresh_provider.dart';
-import 'package:inblue_mobile/features/auth/presentation/providers/auth_state_provider.dart'
-    show isAuthenticatedProvider;
-import 'package:inblue_mobile/features/dashboard/presentation/pages/user_dashboard_page.dart';
-import 'package:inblue_mobile/features/mock_interview/presentation/pages/mock_booking_success_page.dart';
-import 'package:inblue_mobile/features/mock_interview/presentation/pages/mock_interview_list_page.dart';
-import 'package:inblue_mobile/features/mock_interview/presentation/pages/mock_schedule_page.dart';
-import 'package:inblue_mobile/features/mock_interview/presentation/pages/mock_session_detail_page.dart';
-import 'package:inblue_mobile/features/mock_interview/presentation/pages/mock_video_room_page.dart';
-import 'package:inblue_mobile/features/mock_interview/presentation/pages/write_mentor_feedback_page.dart';
-import 'package:inblue_mobile/features/notifications/presentation/pages/notifications_page.dart';
-import 'package:inblue_mobile/features/profile/presentation/pages/change_password_page.dart';
-import 'package:inblue_mobile/features/profile/presentation/pages/profile_page.dart';
+import 'package:inblue_mobile/features/kiosk/presentation/pages/kiosk_session_entry_page.dart';
 
-import 'package:inblue_mobile/features/auth/presentation/pages/signup_page.dart';
-
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorAiKey = GlobalKey<NavigatorState>(debugLabel: 'shellAi');
-final _shellNavigatorMockKey = GlobalKey<NavigatorState>(debugLabel: 'shellMock');
-final _shellNavigatorNotifKey = GlobalKey<NavigatorState>(debugLabel: 'shellNotif');
-final _shellNavigatorProfileKey = GlobalKey<NavigatorState>(debugLabel: 'shellProfile');
-
-Page<void> _noTransitionPage(Widget child) => NoTransitionPage(child: child);
-
-final appRouterProvider = Provider<GoRouter>((ref) {
-  final refresh = ref.watch(routerRefreshNotifierProvider);
-
-  return GoRouter(
-    navigatorKey: _rootNavigatorKey,
-    initialLocation: RoutePaths.splash,
-    debugLogDiagnostics: true,
-    refreshListenable: refresh,
-    redirect: (context, state) {
-      final isLoggedIn = ref.read(isAuthenticatedProvider);
-      final loc = state.matchedLocation;
-      final isPublicAuthRoute = loc == RoutePaths.login ||
-          loc == RoutePaths.signup ||
-          loc == RoutePaths.forgotPassword ||
-          loc == RoutePaths.resetPassword;
-
-      if (!isLoggedIn && !isPublicAuthRoute) return RoutePaths.login;
-      if (isLoggedIn && (isPublicAuthRoute || loc == RoutePaths.splash)) {
-        return RoutePaths.aiInterviewList;
-      }
-      return null;
-    },
+final appRouterProvider = Provider<GoRouter>(
+  (ref) => GoRouter(
+    initialLocation: RoutePaths.kioskEntry,
     routes: [
       GoRoute(
-        path: RoutePaths.login,
-        builder: (_, __) => const LoginPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.signup,
-        builder: (_, __) => const SignupPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.forgotPassword,
-        builder: (_, __) => const ForgotPasswordPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.resetPassword,
-        builder: (_, state) => ResetPasswordPage(
-          initialEmail: state.extra as String?,
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.dashboard,
-        redirect: (_, __) => RoutePaths.aiInterviewList,
-      ),
-      StatefulShellRoute.indexedStack(
-        builder: (_, __, navigationShell) =>
-            UserDashboardPage(navigationShell: navigationShell),
-        branches: [
-          StatefulShellBranch(
-            navigatorKey: _shellNavigatorAiKey,
-            routes: [
-              GoRoute(
-                path: RoutePaths.aiInterviewList,
-                pageBuilder: (_, __) =>
-                    _noTransitionPage(const AiInterviewListPage()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _shellNavigatorMockKey,
-            routes: [
-              GoRoute(
-                path: RoutePaths.mockInterviewList,
-                pageBuilder: (_, __) =>
-                    _noTransitionPage(const MockInterviewListPage()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _shellNavigatorNotifKey,
-            routes: [
-              GoRoute(
-                path: RoutePaths.notifications,
-                pageBuilder: (_, __) =>
-                    _noTransitionPage(const NotificationsPage()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _shellNavigatorProfileKey,
-            routes: [
-              GoRoute(
-                path: RoutePaths.profile,
-                pageBuilder: (_, __) => _noTransitionPage(const ProfilePage()),
-              ),
-            ],
-          ),
-        ],
-      ),
-      GoRoute(
-        path: RoutePaths.aiInterviewSetup,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, __) => const AiInterviewSetupPage(),
+        path: RoutePaths.kioskEntry,
+        builder: (_, __) => const KioskSessionEntryPage(),
       ),
       GoRoute(
         path: RoutePaths.aiInterviewSession,
-        parentNavigatorKey: _rootNavigatorKey,
         builder: (_, state) => AiInterviewRoomPage(
           sessionKey: state.pathParameters['sessionKey']!,
         ),
       ),
-      GoRoute(
-        path: RoutePaths.aiInterviewResult,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, state) => AiInterviewResultPage(
-          sessionId: int.parse(state.pathParameters['sessionId']!),
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.practiceSetDetail,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, state) => PracticeSetDetailPage(
-          practiceSetId: int.parse(state.pathParameters['id']!),
-          initialSet: state.extra as PracticeSet?,
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.mockInterviewSchedule,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, __) => const MockSchedulePage(),
-      ),
-      GoRoute(
-        path: RoutePaths.mockInterviewBookingSuccess,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, __) => const MockBookingSuccessPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.mockInterviewHistory,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, state) => MockSessionDetailPage(
-          sessionId: int.parse(state.pathParameters['sessionId']!),
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.mockInterviewRoom,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, state) => MockVideoRoomPage(
-          sessionId: int.parse(state.pathParameters['sessionId']!),
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.mockInterviewFeedback,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, state) => WriteMentorFeedbackPage(
-          sessionId: int.parse(state.pathParameters['sessionId']!),
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.changePassword,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, __) => const ChangePasswordPage(),
-      ),
     ],
-  );
-});
+  ),
+);
