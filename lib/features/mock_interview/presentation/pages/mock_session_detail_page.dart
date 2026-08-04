@@ -65,37 +65,6 @@ class MockSessionDetailPage extends ConsumerWidget {
                   }
                 },
               ),
-              const SizedBox(height: AppSpacing.sm),
-              OutlinedButton(
-                onPressed: () async {
-                  final userId = ref.read(currentUserIdProvider);
-                  if (userId == null) return;
-                  try {
-                    await ref.read(mockInterviewRemoteProvider).transferOut(
-                          amount: session.totalPrice?.round() ?? 0,
-                          userId: userId,
-                        );
-                    await ref.read(mockInterviewRemoteProvider).updateSession({
-                      'id': session.id,
-                      'userId': session.userId,
-                      'userId2': session.userId2,
-                      'status': 'PAID',
-                      'joinTime': session.joinTime,
-                      'roomName': session.roomName,
-                      'roomUrl': session.roomUrl,
-                      'totalPrice': session.totalPrice,
-                    });
-                    ref.invalidate(mockSessionDetailProvider(sessionId));
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toUserMessage())),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Thanh toán bằng Ví'),
-              ),
             ],
             if (session.canJoin(DateTime.now()))
               AppPrimaryButton(

@@ -19,6 +19,28 @@ class MockVideoRoomPage extends ConsumerStatefulWidget {
 
 class _MockVideoRoomPageState extends ConsumerState<MockVideoRoomPage> {
   WebViewController? _controller;
+  bool _isMicMuted = false;
+  bool _isCameraOff = false;
+
+  void _toggleMic() {
+    setState(() => _isMicMuted = !_isMicMuted);
+    _controller?.runJavaScript('''
+      if (window.DailyIframe) {
+        const call = window.DailyIframe.getCallInstance();
+        if (call) call.setLocalAudio(${!_isMicMuted});
+      }
+    ''');
+  }
+
+  void _toggleCamera() {
+    setState(() => _isCameraOff = !_isCameraOff);
+    _controller?.runJavaScript('''
+      if (window.DailyIframe) {
+        const call = window.DailyIframe.getCallInstance();
+        if (call) call.setLocalVideo(${!_isCameraOff});
+      }
+    ''');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +83,59 @@ class _MockVideoRoomPageState extends ConsumerState<MockVideoRoomPage> {
                 ),
               );
 
-            return WebViewWidget(controller: _controller!);
+            return Stack(
+              children: [
+                WebViewWidget(controller: _controller!),
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  bottom: 24,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          onPressed: _toggleMic,
+                          style: IconButton.styleFrom(
+                            backgroundColor: _isMicMuted ? Colors.red.shade700 : Colors.white24,
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: Icon(_isMicMuted ? Icons.mic_off : Icons.mic),
+                        ),
+                        IconButton(
+                          onPressed: _toggleCamera,
+                          style: IconButton.styleFrom(
+                            backgroundColor: _isCameraOff ? Colors.red.shade700 : Colors.white24,
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: Icon(_isCameraOff ? Icons.videocam_off : Icons.videocam),
+                        ),
+                        IconButton(
+                          onPressed: () => _confirmLeave(context),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(Icons.call_end),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
           },
         ),
       ),

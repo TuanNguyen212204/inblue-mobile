@@ -280,22 +280,135 @@ class _MentorStep extends ConsumerWidget {
     required int index,
     required VoidCallback onTap,
   }) {
-    final price = m.pricePerMinute ?? 0;
     final rating = m.averageRating;
-    final desc = [
-      if (m.expertise != null && m.expertise!.isNotEmpty) m.expertise,
-      if (price > 0) '${price.round()}đ/phút',
-      if (rating != null) '★ ${rating.toStringAsFixed(1)}',
-    ].whereType<String>().join(' · ');
+    final scheme = Theme.of(context).colorScheme;
 
-    return AppSelectableOptionCard(
-      label: m.name ?? 'Mentor',
-      description: desc.isEmpty ? null : desc,
-      icon: Icons.person_search_rounded,
-      selected: selected,
-      animationIndex: index,
-      onTap: onTap,
-    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? scheme.primary : scheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
+          color: selected
+              ? scheme.primaryContainer.withValues(alpha: 0.35)
+              : scheme.surfaceContainerLow,
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: scheme.primaryContainer,
+                  backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty
+                      ? NetworkImage(m.avatarUrl!)
+                      : null,
+                  child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                      ? Text(
+                          (m.name?.isNotEmpty == true)
+                              ? m.name![0].toUpperCase()
+                              : '?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: scheme.onPrimaryContainer,
+                            fontSize: 20,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        m.name ?? 'Mentor',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      if (m.expertise != null && m.expertise!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: (m.expertise ?? '').split(',').take(3).map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: scheme.secondaryContainer.withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                tag.trim(),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: scheme.onSecondaryContainer,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (rating != null) ...[
+                            ...List.generate(5, (i) {
+                              final filled = i < rating.floor();
+                              final half =
+                                  !filled && i < rating && rating - i >= 0.5;
+                              return Icon(
+                                filled
+                                    ? Icons.star_rounded
+                                    : half
+                                        ? Icons.star_half_rounded
+                                        : Icons.star_border_rounded,
+                                size: 14,
+                                color: Colors.amber.shade600,
+                              );
+                            }),
+                            const SizedBox(width: 4),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                          if (m.pricePerMinute != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '${(m.pricePerMinute ?? 0).round()}đ/phút',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (selected)
+                  Icon(Icons.check_circle_rounded,
+                      color: scheme.primary, size: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).animate(delay: (index * 50).ms).fadeIn().slideX(begin: 0.04);
   }
 }
 

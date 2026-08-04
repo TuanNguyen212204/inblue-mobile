@@ -4,9 +4,15 @@ import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier
 import 'package:inblue_mobile/features/mock_interview/data/datasources/mock_interview_remote_datasource.dart';
 import 'package:inblue_mobile/features/mock_interview/domain/entities/mock_session.dart';
 
+import 'package:inblue_mobile/core/network/api_client_provider.dart';
+
 final mockInterviewRemoteProvider =
     Provider<MockInterviewRemoteDataSource>((ref) {
-  return MockInterviewRemoteDataSource(ref.watch(dioProvider));
+  return MockInterviewRemoteDataSource(
+    ref.watch(dioProvider),
+    sessionApi: ref.watch(sessionControllerApiProvider),
+    mentorApi: ref.watch(mentorControllerApiProvider),
+  );
 });
 
 final mockSessionListProvider =

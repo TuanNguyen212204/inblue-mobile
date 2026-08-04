@@ -15,95 +15,181 @@ import 'package:inblue_mobile/shared/presentation/widgets/app_empty_state.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_error_view.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
 
-class MockInterviewListPage extends ConsumerWidget {
+class MockInterviewListPage extends ConsumerStatefulWidget {
   const MockInterviewListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MockInterviewListPage> createState() =>
+      _MockInterviewListPageState();
+}
+
+class _MockInterviewListPageState extends ConsumerState<MockInterviewListPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl;
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final sessions = ref.watch(mockSessionListProvider);
 
     return ShellTabBody(
-      child: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(mockSessionListProvider),
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: AppCompactHeader(
-                title: 'Phỏng vấn Mock',
-                subtitle: 'Lịch với mentor chuyên gia',
-                actions: [
-                  IconButton(
+      child: NestedScrollView(
+        headerSliverBuilder: (_, __) => [
+          SliverToBoxAdapter(
+            child: AppCompactHeader(
+              title: 'Phỏng vấn Mock',
+              subtitle: 'Lịch với mentor chuyên gia',
+              actions: [
+                IconButton(
+                  onPressed: () => context.push(RoutePaths.mockInterviewSchedule),
+                  icon: const Icon(Icons.calendar_month_outlined),
+                ),
+              ],
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'Tìm buổi phỏng vấn...',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        filled: true,
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (v) => setState(() => _query = v.toLowerCase()),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  FilledButton.icon(
                     onPressed: () => context.push(RoutePaths.mockInterviewSchedule),
-                    icon: const Icon(Icons.calendar_month_outlined),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Đặt lịch'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
                   ),
                 ],
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: AppPrimaryButton(
-                  label: 'Đặt lịch với Mentor',
-                  icon: Icons.event_available,
-                  onPressed: () => context.push(RoutePaths.mockInterviewSchedule),
-                ),
-              ),
+          ),
+          SliverToBoxAdapter(
+            child: TabBar(
+              controller: _tabCtrl,
+              tabs: const [
+                Tab(text: 'Sắp tới'),
+                Tab(text: 'Đã hoàn thành'),
+              ],
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
-            sessions.when(
-              loading: () => SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, __) => const Padding(
-                    padding: EdgeInsets.all(AppSpacing.md),
-                    child: AppShimmerCard(),
-                  ),
-                  childCount: 4,
-                ),
-              ),
-              error: (e, _) => SliverFillRemaining(
-                child: AppErrorView(
-                  message: e.toString(),
-                  onRetry: () => ref.invalidate(mockSessionListProvider),
-                ),
-              ),
-              data: (list) {
-                final upcoming = list.where((s) {
-                  return s.status == 'SCHEDULED' ||
-                      s.status == 'PAID' ||
-                      s.status == 'ONGOING' ||
-                      s.status == 'DRAFT';
-                }).toList();
+          ),
+        ],
+        body: sessions.when(
+          loading: () => ListView.builder(
+            itemCount: 4,
+            itemBuilder: (_, __) => const Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: AppShimmerCard(),
+            ),
+          ),
+          error: (e, _) => AppErrorView(
+            message: e.toString(),
+            onRetry: () => ref.invalidate(mockSessionListProvider),
+          ),
+          data: (list) {
+            final filtered = _query.isEmpty
+                ? list
+                : list.where((s) {
+                    final mentor = s.userId2?.toString() ?? '';
+                    final status = s.status?.toLowerCase() ?? '';
+                    return mentor.contains(_query) || status.contains(_query);
+                  }).toList();
 
-                if (upcoming.isEmpty) {
-                  return const SliverFillRemaining(
-                    child: AppEmptyState(
-                      title: 'Chưa có lịch phỏng vấn Mock',
-                      subtitle: 'Đặt lịch với mentor để bắt đầu',
-                      icon: Icons.people_outline,
-                    ),
-                  );
-                }
+            final upcoming = filtered.where((s) {
+              return s.status == 'SCHEDULED' ||
+                  s.status == 'PAID' ||
+                  s.status == 'ONGOING' ||
+                  s.status == 'DRAFT';
+            }).toList();
 
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final s = upcoming[index];
-                      return _SessionCard(session: s)
-                          .animate(delay: (index * 40).ms)
-                          .fadeIn()
-                          .slideY(begin: 0.05);
-                    },
-                    childCount: upcoming.length,
-                  ),
-                );
-              },
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: ShellTabLayout.bottomInset),
-            ),
-          ],
+            final completed = filtered
+                .where((s) => s.status == 'COMPLETED' || s.status == 'DONE')
+                .toList();
+
+            return TabBarView(
+              controller: _tabCtrl,
+              children: [
+                _SessionList(
+                  sessions: upcoming,
+                  emptyTitle: 'Chưa có lịch sắp tới',
+                  emptySubtitle: 'Đặt lịch với mentor để bắt đầu',
+                ),
+                _SessionList(
+                  sessions: completed,
+                  emptyTitle: 'Chưa có buổi hoàn thành',
+                  emptySubtitle: 'Các buổi đã kết thúc sẽ hiển thị ở đây',
+                ),
+              ],
+            );
+          },
         ),
       ),
+    );
+  }
+}
+
+class _SessionList extends StatelessWidget {
+  const _SessionList({
+    required this.sessions,
+    required this.emptyTitle,
+    required this.emptySubtitle,
+  });
+
+  final List<MockSession> sessions;
+  final String emptyTitle;
+  final String emptySubtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (sessions.isEmpty) {
+      return AppEmptyState(
+        title: emptyTitle,
+        subtitle: emptySubtitle,
+        icon: Icons.people_outline,
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: ShellTabLayout.bottomInset),
+      itemCount: sessions.length,
+      itemBuilder: (context, index) {
+        return _SessionCard(session: sessions[index])
+            .animate(delay: (index * 40).ms)
+            .fadeIn()
+            .slideY(begin: 0.05);
+      },
     );
   }
 }
@@ -135,30 +221,30 @@ class _SessionCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  AppStatusBadge(
-                    label: session.status ?? '—',
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                  ),
-                  const Spacer(),
-                  if (session.totalPrice != null)
-                    Text('${session.totalPrice!.round()}đ'),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text('${session.joinTime ?? ''} · ${session.duration ?? 0} phút'),
-              const SizedBox(height: AppSpacing.md),
-              if (canJoin)
-                AppPrimaryButton(
-                  label: 'Tham gia',
-                  onPressed: () {
-                    context.push(RoutePaths.mockInterviewRoomPath(session.id!));
-                  },
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AppStatusBadge(
+                      label: session.status ?? '—',
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    const Spacer(),
+                    if (session.totalPrice != null)
+                      Text('${session.totalPrice!.round()}đ'),
+                  ],
                 ),
-            ],
+                const SizedBox(height: AppSpacing.sm),
+                Text('${session.joinTime ?? ''} · ${session.duration ?? 0} phút'),
+                const SizedBox(height: AppSpacing.md),
+                if (canJoin)
+                  AppPrimaryButton(
+                    label: 'Tham gia',
+                    onPressed: () {
+                      context.push(RoutePaths.mockInterviewRoomPath(session.id!));
+                    },
+                  ),
+              ],
             ),
           ),
         ),

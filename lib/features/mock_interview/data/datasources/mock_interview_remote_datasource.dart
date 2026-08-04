@@ -1,48 +1,81 @@
 import 'package:dio/dio.dart';
+import 'package:inblue_api/inblue_api.dart' hide Mentor;
 import 'package:inblue_mobile/core/constants/api_paths.dart';
 import 'package:inblue_mobile/features/mock_interview/domain/entities/mentor.dart';
 import 'package:inblue_mobile/features/mock_interview/domain/entities/mock_session.dart';
 
 class MockInterviewRemoteDataSource {
-  MockInterviewRemoteDataSource(this._dio);
+  MockInterviewRemoteDataSource(
+    this._dio, {
+    SessionControllerApi? sessionApi,
+    MentorControllerApi? mentorApi,
+  })  : _sessionApi = sessionApi ?? SessionControllerApi(_dio, standardSerializers),
+        _mentorApi = mentorApi ?? MentorControllerApi(_dio, standardSerializers);
 
   final Dio _dio;
+  final SessionControllerApi _sessionApi;
+  final MentorControllerApi _mentorApi;
 
   Future<List<Mentor>> getMentors() async {
+    try {
+      final res = await _mentorApi.getAllMentors();
+      if (res.data != null) {
+        return res.data!
+            .map((m) => Mentor.fromJson({
+                  'id': m.id,
+                  'name': m.name,
+                  'avatarUrl': m.avatarUrl,
+                  'expertise': m.expertise,
+                  'active': m.active ?? true,
+                  'yearsOfExperience': m.yearsOfExperience,
+                  'bio': m.bio,
+                }))
+            .where((m) => m.active != false)
+            .toList();
+      }
+    } catch (_) {}
+
     final res = await _dio.get<dynamic>(ApiPaths.mentors);
-    final list = _unwrapList(res.data);
+    final list = _parseList(res.data);
     return list
         .map((e) => Mentor.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((m) => m.active != false)
         .toList();
   }
 
-  List<dynamic> _unwrapList(dynamic data) {
-    if (data is List) return data;
-    if (data is Map) {
-      for (final key in ['data', 'content', 'items', 'mentors']) {
-        final nested = data[key];
-        if (nested is List) return nested;
-      }
-    }
-    return const [];
-  }
-
   Future<Mentor> getMentor(int id) async {
     final res = await _dio.get<dynamic>(ApiPaths.mentorById(id));
-    return Mentor.fromJson(_unwrapMap(res.data));
+    return Mentor.fromJson(_parseMap(res.data));
   }
 
   Future<List<MockSession>> getSessionsByUser(int userId) async {
+    try {
+      final res = await _sessionApi.getSessionsByUserId(userId: userId);
+      if (res.data != null) {
+        return res.data!
+            .map((s) => MockSession.fromJson({
+                  'id': s.id,
+                  'userId': s.userId,
+                  'mentorId': s.mentorId,
+                  'status': s.status,
+                  'joinTime': s.joinTime,
+                  'roomName': s.roomName,
+                  'roomUrl': s.roomUrl,
+                  'totalPrice': s.totalPrice,
+                }))
+            .toList();
+      }
+    } catch (_) {}
+
     final res = await _dio.get<dynamic>(ApiPaths.sessionsByUser(userId));
-    return _unwrapList(res.data)
+    return _parseList(res.data)
         .map((e) => MockSession.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<MockSession> getSession(int id) async {
     final res = await _dio.get<dynamic>(ApiPaths.sessionById(id));
-    return MockSession.fromJson(_unwrapMap(res.data));
+    return MockSession.fromJson(_parseMap(res.data));
   }
 
   Future<MockSession> createSession(Map<String, dynamic> body) async {
@@ -50,22 +83,7 @@ class MockInterviewRemoteDataSource {
       ApiPaths.sessionCreate,
       data: body,
     );
-    return MockSession.fromJson(_unwrapMap(res.data));
-  }
-
-  Map<String, dynamic> _unwrapMap(dynamic data) {
-    if (data is Map<String, dynamic>) {
-      final nested = data['data'];
-      if (nested is Map<String, dynamic>) return nested;
-      if (nested is Map) return Map<String, dynamic>.from(nested);
-      return data;
-    }
-    if (data is Map) {
-      final nested = data['data'];
-      if (nested is Map) return Map<String, dynamic>.from(nested);
-      return Map<String, dynamic>.from(data);
-    }
-    return {};
+    return MockSession.fromJson(_parseMap(res.data));
   }
 
   Future<String> makePayment(int sessionId) async {
@@ -117,6 +135,32 @@ class MockInterviewRemoteDataSource {
 
   Future<void> createMentorFeedback(Map<String, dynamic> body) async {
     await _dio.post<dynamic>(ApiPaths.mentorFeedbacks, data: body);
+  }
+
+  List<dynamic> _parseList(dynamic data) {
+    if (data is List) return data;
+    if (data is Map) {
+      for (final key in ['data', 'content', 'items', 'mentors']) {
+        final nested = data[key];
+        if (nested is List) return nested;
+      }
+    }
+    return const [];
+  }
+
+  Map<String, dynamic> _parseMap(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final nested = data['data'];
+      if (nested is Map<String, dynamic>) return nested;
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return data;
+    }
+    if (data is Map) {
+      final nested = data['data'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return Map<String, dynamic>.from(data);
+    }
+    return {};
   }
 
   String _extractPaymentUrl(dynamic data) {
