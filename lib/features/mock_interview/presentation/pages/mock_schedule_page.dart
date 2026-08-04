@@ -334,6 +334,27 @@ class _MentorStep extends ConsumerWidget {
                               fontWeight: FontWeight.w700,
                             ),
                       ),
+                      if (m.isVerified == true) ...[ 
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.verified_rounded,
+                              size: 14,
+                              color: Colors.blue.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Đã xác minh',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.blue.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (m.expertise != null && m.expertise!.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Wrap(

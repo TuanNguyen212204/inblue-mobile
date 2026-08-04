@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
@@ -5,7 +6,8 @@ import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_mo
 import 'package:inblue_mobile/features/ai_interview/presentation/providers/ai_interview_room_notifier.dart';
 
 /// Immersive AI avatar stage with pulse when thinking or listening.
-class AiRoomStage extends StatelessWidget {
+/// Shows a live camera self-view in the top-right corner.
+class AiRoomStage extends StatefulWidget {
   const AiRoomStage({
     required this.room,
     super.key,
@@ -14,10 +16,63 @@ class AiRoomStage extends StatelessWidget {
   final AiRoomState room;
 
   @override
+  State<AiRoomStage> createState() => _AiRoomStageState();
+}
+
+class _AiRoomStageState extends State<AiRoomStage> {
+  CameraController? _cameraController;
+  bool _cameraReady = false;
+  bool _cameraInitFailed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        if (mounted) setState(() => _cameraInitFailed = true);
+        return;
+      }
+      // Prefer front camera for self-view
+      final front = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+      final controller = CameraController(
+        front,
+        ResolutionPreset.low,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+      await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _cameraController = controller;
+        _cameraReady = true;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _cameraInitFailed = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _cameraController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final thinking = room.phase == AiRoomPhase.submitting ||
-        room.phase == AiRoomPhase.evaluating;
+    final thinking = widget.room.phase == AiRoomPhase.submitting ||
+        widget.room.phase == AiRoomPhase.evaluating;
 
     return Container(
       width: double.infinity,
@@ -44,7 +99,8 @@ class AiRoomStage extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          if (thinking || room.isListening)
+          // ── Pulse animation overlay ────────────────────────────────────
+          if (thinking || widget.room.isListening)
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -64,6 +120,8 @@ class AiRoomStage extends StatelessWidget {
                     duration: 1800.ms,
                   ),
             ),
+
+          // ── AI avatar + status text ────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
             child: Column(
@@ -86,7 +144,7 @@ class AiRoomStage extends StatelessWidget {
                 Text(
                   thinking
                       ? 'AI đang suy nghĩ...'
-                      : room.isListening
+                      : widget.room.isListening
                           ? 'Đang lắng nghe bạn'
                           : 'Trợ lý phỏng vấn AI',
                   style: const TextStyle(
@@ -96,7 +154,7 @@ class AiRoomStage extends StatelessWidget {
                     letterSpacing: -0.2,
                   ),
                 ),
-                if (room.isListening) ...[
+                if (widget.room.isListening) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Nói rõ ràng vào micro',
@@ -109,29 +167,70 @@ class AiRoomStage extends StatelessWidget {
               ],
             ),
           ),
+
+          // ── Self-view camera (top-right) ───────────────────────────────
           Positioned(
             top: 12,
             right: 12,
-            child: Container(
-              width: 72,
-              height: 52,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.videocam_rounded, color: Colors.white70, size: 20),
-                  SizedBox(height: 2),
-                  Text('Self-View', style: TextStyle(color: Colors.white70, fontSize: 9)),
-                ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 80,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: _buildSelfView(),
               ),
             ),
           ),
         ],
       ),
     ).animate().fadeIn(duration: 500.ms);
+  }
+
+  Widget _buildSelfView() {
+    if (_cameraReady && _cameraController != null) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          // Mirror the preview so it looks natural (front camera)
+          Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.rotationY(3.14159), // horizontal flip
+            child: CameraPreview(_cameraController!),
+          ),
+          Positioned(
+            bottom: 3,
+            left: 0,
+            right: 0,
+            child: Text(
+              'Bạn',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    // Fallback: camera not available or error
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.videocam_rounded, color: Colors.white70, size: 20),
+        const SizedBox(height: 2),
+        Text(
+          _cameraInitFailed ? 'Không có\ncamera' : 'Self-View',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70, fontSize: 9),
+        ),
+      ],
+    );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
@@ -241,7 +243,7 @@ class _SettingsTab extends ConsumerWidget {
                 leading: const Icon(Icons.lock_outline),
                 title: const Text('Đổi mật khẩu'),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => showAccountSettingsSheet(context, ref),
+                onTap: () => context.push(RoutePaths.changePassword),
               ),
               const Divider(height: 1, indent: 56),
               ListTile(

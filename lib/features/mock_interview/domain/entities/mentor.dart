@@ -13,6 +13,7 @@ class Mentor {
     this.averageRating,
     this.totalSession,
     this.active,
+    this.isVerified,
   });
 
   final int? id;
@@ -26,6 +27,7 @@ class Mentor {
   final double? averageRating;
   final int? totalSession;
   final bool? active;
+  final bool? isVerified;
 
   factory Mentor.fromJson(Map<String, dynamic> json) => Mentor(
         id: JsonCoercion.asInt(json['id']),
@@ -39,5 +41,7 @@ class Mentor {
         averageRating: JsonCoercion.asDouble(json['averageRating']),
         totalSession: JsonCoercion.asInt(json['totalSession']),
         active: JsonCoercion.asBool(json['active']),
+        isVerified: JsonCoercion.asBool(json['isVerified']) ??
+            JsonCoercion.asBool(json['verified']),
       );
 }

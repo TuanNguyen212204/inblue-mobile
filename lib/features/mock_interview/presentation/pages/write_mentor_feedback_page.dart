@@ -234,17 +234,13 @@ class _WriteMentorFeedbackPageState
       return;
     }
 
-    // Build structured STAR comment
-    final starComment = [
-      if (_situationCtrl.text.trim().isNotEmpty)
-        'S: ${_situationCtrl.text.trim()}',
-      if (_taskCtrl.text.trim().isNotEmpty) 'T: ${_taskCtrl.text.trim()}',
-      if (_actionCtrl.text.trim().isNotEmpty) 'A: ${_actionCtrl.text.trim()}',
-      if (_resultCtrl.text.trim().isNotEmpty) 'R: ${_resultCtrl.text.trim()}',
-      if (_overallCtrl.text.trim().isNotEmpty) _overallCtrl.text.trim(),
-    ].join('\n');
+    final hasAnyContent = _situationCtrl.text.trim().isNotEmpty ||
+        _taskCtrl.text.trim().isNotEmpty ||
+        _actionCtrl.text.trim().isNotEmpty ||
+        _resultCtrl.text.trim().isNotEmpty ||
+        _overallCtrl.text.trim().isNotEmpty;
 
-    if (starComment.isEmpty) {
+    if (!hasAnyContent) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập ít nhất một nhận xét')),
       );
@@ -263,7 +259,12 @@ class _WriteMentorFeedbackPageState
         'mentorId': session.userId2,
         'userId': userId,
         'rating': _rating,
-        'comment': starComment,
+        // Structured STAR fields — sent as separate API properties
+        'situation': _situationCtrl.text.trim(),
+        'task': _taskCtrl.text.trim(),
+        'action': _actionCtrl.text.trim(),
+        'result': _resultCtrl.text.trim(),
+        'overallComment': _overallCtrl.text.trim(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

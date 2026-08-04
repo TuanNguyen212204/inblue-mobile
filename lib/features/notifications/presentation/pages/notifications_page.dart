@@ -9,6 +9,49 @@ import 'package:inblue_mobile/features/notifications/domain/entities/app_notific
 import 'package:inblue_mobile/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
 
+// ── Icon mapping theo notification type ─────────────────────────────────────
+
+({IconData icon, Color color}) _iconForType(String? type) {
+  return switch (type?.toUpperCase()) {
+    'PAYMENT' => (icon: Icons.payment_rounded, color: Colors.green.shade600),
+    'INTERVIEW' || 'AI_INTERVIEW' => (
+        icon: Icons.psychology_rounded,
+        color: Colors.blue.shade600
+      ),
+    'MOCK_INTERVIEW' || 'MOCK' => (
+        icon: Icons.people_rounded,
+        color: Colors.purple.shade600
+      ),
+    'SCHEDULE' || 'BOOKING' => (
+        icon: Icons.calendar_today_rounded,
+        color: Colors.orange.shade600
+      ),
+    'SYSTEM' => (icon: Icons.info_rounded, color: Colors.blueGrey.shade600),
+    _ => (icon: Icons.notifications_rounded, color: Colors.grey.shade600),
+  };
+}
+
+// ── Date bucket helper ────────────────────────────────────────────────────────
+
+String _bucketLabel(AppNotification n) {
+  if (n.createdAt == null || n.createdAt!.isEmpty) return 'Cũ hơn';
+  try {
+    final dt = DateTime.parse(n.createdAt!).toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final nDay = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(nDay).inDays;
+    if (diff == 0) return 'Hôm nay';
+    if (diff == 1) return 'Hôm qua';
+    if (diff <= 7) return 'Tuần trước';
+    return 'Cũ hơn';
+  } catch (_) {
+    return 'Cũ hơn';
+  }
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
@@ -38,6 +81,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       ref.read(notificationsRemoteDataSourceProvider).markAsRead(item.id);
       ref.invalidate(notificationsProvider);
     }
+    final typeInfo = _iconForType(item.type);
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -52,6 +96,16 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           children: [
             Row(
               children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: typeInfo.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(typeInfo.icon, color: typeInfo.color, size: 20),
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     item.title,
@@ -83,6 +137,67 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     );
   }
 
+  /// Build grouped sliver list với date headers.
+  List<Widget> _buildGroupedItems(List<AppNotification> items) {
+    // Giữ thứ tự bucket: Hôm nay → Hôm qua → Tuần trước → Cũ hơn
+    const bucketOrder = ['Hôm nay', 'Hôm qua', 'Tuần trước', 'Cũ hơn'];
+    final grouped = <String, List<AppNotification>>{};
+    for (final b in bucketOrder) {
+      grouped[b] = [];
+    }
+    for (final n in items) {
+      grouped[_bucketLabel(n)]!.add(n);
+    }
+
+    final widgets = <Widget>[];
+    var globalIndex = 0;
+    for (final bucket in bucketOrder) {
+      final group = grouped[bucket]!;
+      if (group.isEmpty) continue;
+
+      // Date header
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, AppSpacing.md, 0, AppSpacing.xs),
+          child: Text(
+            bucket,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
+          ),
+        ),
+      );
+
+      for (final item in group) {
+        final typeInfo = _iconForType(item.type);
+        final idx = globalIndex++;
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _showDetailModal(context, item),
+              child: NotificationTile(
+                title: item.title,
+                body: item.body,
+                timeLabel: item.formattedTime,
+                isRead: item.isRead,
+                icon: typeInfo.icon,
+                iconColor: typeInfo.color,
+              ),
+            )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: (idx * 40).ms)
+                .slideY(begin: 0.04),
+          ),
+        );
+      }
+    }
+    return widgets;
+  }
+
   @override
   Widget build(BuildContext context) {
     final notificationsAsync = ref.watch(notificationsProvider);
@@ -110,6 +225,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 ],
               ),
             ),
+            // ── Stat badges + filter ──────────────────────────────────────
             SliverToBoxAdapter(
               child: notificationsAsync.when(
                 data: (items) {
@@ -125,7 +241,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                           children: [
                             _StatBadge(label: 'Tất cả', count: total, color: Colors.blue),
                             const SizedBox(width: AppSpacing.xs),
-                            _StatBadge(label: 'Chưa đọc', count: unread, color: Colors.orange),
+                            _StatBadge(
+                                label: 'Chưa đọc', count: unread, color: Colors.orange),
                             const SizedBox(width: AppSpacing.xs),
                             _StatBadge(label: 'Đã đọc', count: read, color: Colors.grey),
                           ],
@@ -138,7 +255,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                             ButtonSegment(value: 'READ', label: Text('Đã đọc')),
                           ],
                           selected: {_filter},
-                          onSelectionChanged: (val) => setState(() => _filter = val.first),
+                          onSelectionChanged: (val) =>
+                              setState(() => _filter = val.first),
                         ),
                         const SizedBox(height: AppSpacing.md),
                       ],
@@ -149,6 +267,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 error: (_, __) => const SizedBox.shrink(),
               ),
             ),
+            // ── Main list (grouped) ───────────────────────────────────────
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -186,28 +305,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                     );
                   }
 
+                  final groupedWidgets = _buildGroupedItems(items);
                   return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final item = items[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: InkWell(
-                            onTap: () => _showDetailModal(context, item),
-                            child: NotificationTile(
-                              title: item.title,
-                              body: item.body,
-                              timeLabel: item.formattedTime,
-                              isRead: item.isRead,
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 300.ms, delay: (index * 40).ms)
-                              .slideY(begin: 0.04),
-                        );
-                      },
-                      childCount: items.length,
-                    ),
+                    delegate: SliverChildListDelegate(groupedWidgets),
                   );
                 },
               ),
@@ -218,6 +318,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     );
   }
 }
+
+// ── Supporting widgets ────────────────────────────────────────────────────────
 
 class _StatBadge extends StatelessWidget {
   const _StatBadge({
@@ -308,7 +410,8 @@ class NotificationTile extends StatelessWidget {
     required this.timeLabel,
     super.key,
     this.isRead = false,
-    this.icon = Icons.info_outline_rounded,
+    this.icon = Icons.notifications_rounded,
+    this.iconColor,
   });
 
   final String title;
@@ -316,10 +419,12 @@ class NotificationTile extends StatelessWidget {
   final String timeLabel;
   final bool isRead;
   final IconData icon;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final resolvedIconColor = iconColor ?? scheme.primary;
 
     return AppGlassSurface(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -331,10 +436,10 @@ class NotificationTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: isRead ? 0.08 : 0.15),
+              color: resolvedIconColor.withValues(alpha: isRead ? 0.08 : 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: scheme.primary, size: 22),
+            child: Icon(icon, color: resolvedIconColor, size: 22),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
