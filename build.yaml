@@ -1,5 +1,12 @@
 targets:
   $default:
+    sources:
+      include:
+        - "$package$"
+        - "lib/**"
+        - "test/**"
+      exclude:
+        - "lib/core/network/generated/**"
     builders:
       json_serializable:
         options:
