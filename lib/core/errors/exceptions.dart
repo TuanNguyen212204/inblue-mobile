@@ -24,6 +24,6 @@ final class CacheException extends AppException {
 }
 
 final class UnauthorizedException extends AppException {
-  const UnauthorizedException({String message = 'Unauthorized'})
+  const UnauthorizedException({String message = 'Email hoặc mật khẩu không chính xác.'})
       : super(message);
 }

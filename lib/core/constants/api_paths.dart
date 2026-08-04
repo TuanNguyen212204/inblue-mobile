@@ -14,6 +14,7 @@ abstract final class ApiPaths {
       '/api/users/subscribe?userId=$userId&planId=$planId';
 
   // Wallet & transactions
+  static const myJdPurchases = '/api/jd-purchases/me';
   static String transactionsByUser(int userId) =>
       '/api/transactions/user/$userId';
   static String transactionTransferIn(int amount, int userId) =>
