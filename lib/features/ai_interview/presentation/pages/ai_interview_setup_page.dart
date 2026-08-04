@@ -58,6 +58,7 @@ class AiInterviewSetupPage extends ConsumerWidget {
               ),
             ),
             _StepIndicator(current: state.step),
+            _SetupSummaryCard(state: state),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 320),
@@ -352,6 +353,83 @@ class _StepJd extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _SetupSummaryCard extends StatelessWidget {
+  const _SetupSummaryCard({required this.state});
+
+  final AiSetupState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.tune_rounded, size: 20, color: scheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _ChipItem(
+                    label: state.interviewMode != null ? 'Mode: ${state.interviewMode}' : '1. Cấu hình',
+                    done: state.step1Valid,
+                  ),
+                  const SizedBox(width: 6),
+                  _ChipItem(
+                    label: state.step2Valid ? 'Hồ sơ: OK' : '2. Hồ sơ',
+                    done: state.step2Valid,
+                  ),
+                  const SizedBox(width: 6),
+                  _ChipItem(
+                    label: state.step3Valid ? 'JD: OK' : '3. Tạo JD',
+                    done: state.step3Valid,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChipItem extends StatelessWidget {
+  const _ChipItem({required this.label, required this.done});
+
+  final String label;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: done ? scheme.primary : scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: done ? scheme.onPrimary : scheme.onSurfaceVariant,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }

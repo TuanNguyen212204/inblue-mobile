@@ -109,6 +109,27 @@ class AiRoomStage extends StatelessWidget {
               ],
             ),
           ),
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Container(
+              width: 72,
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.videocam_rounded, color: Colors.white70, size: 20),
+                  SizedBox(height: 2),
+                  Text('Self-View', style: TextStyle(color: Colors.white70, fontSize: 9)),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     ).animate().fadeIn(duration: 500.ms);

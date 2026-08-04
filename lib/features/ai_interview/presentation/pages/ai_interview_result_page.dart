@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inblue_mobile/core/router/route_paths.dart';
 import 'package:inblue_mobile/design_system/components/app_primary_button.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/ai_interview/domain/entities/interview_session.dart';
@@ -131,6 +133,86 @@ class _AiInterviewResultPageState extends ConsumerState<AiInterviewResultPage> {
                                 const SizedBox(height: 8),
                                 Text('Nhận xét: ${qa.feedback}'),
                               ],
+                              if (qa.suggestion != null && qa.suggestion!.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(AppSpacing.sm),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.amber.shade300),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.lightbulb_outline, size: 20, color: Colors.amber.shade900),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Gợi ý cải thiện:',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.amber.shade900,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              qa.suggestion!,
+                                              style: TextStyle(color: Colors.amber.shade900, fontSize: 13),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              if (qa.behavioralWarnings != null && qa.behavioralWarnings!.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(AppSpacing.sm),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.red.shade300),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.warning_amber_rounded, size: 20, color: Colors.red.shade900),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Cảnh báo hành vi:',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.red.shade900,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            ...qa.behavioralWarnings!.map(
+                                              (w) => Text(
+                                                '• $w',
+                                                style: TextStyle(color: Colors.red.shade900, fontSize: 13),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -195,9 +277,19 @@ class _ImprovementSection extends StatelessWidget {
                   ...practiceSets.map(
                     (ps) => ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.route),
+                      leading: const CircleAvatar(
+                        radius: 18,
+                        child: Icon(Icons.route, size: 18),
+                      ),
                       title: Text(ps.practiceSetName ?? 'Lộ trình luyện tập'),
                       subtitle: Text(ps.objective ?? ''),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      onTap: ps.id != null
+                          ? () => context.push(
+                                RoutePaths.practiceSetDetailPath(ps.id!),
+                                extra: ps,
+                              )
+                          : null,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),

@@ -24,6 +24,8 @@ class AiInterviewListPage extends ConsumerStatefulWidget {
 class _AiInterviewListPageState extends ConsumerState<AiInterviewListPage> {
   final _searchCtrl = TextEditingController();
 
+  String _statusFilter = 'ALL'; // ALL | COMPLETED | IN_PROGRESS
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -79,6 +81,12 @@ class _AiInterviewListPageState extends ConsumerState<AiInterviewListPage> {
             ),
             data: (state) {
               _searchCtrl.text = state.search;
+              final filteredHistory = state.history.where((s) {
+                if (_statusFilter == 'COMPLETED') return s.isCompleted;
+                if (_statusFilter == 'IN_PROGRESS') return s.isInProgress || !s.isCompleted;
+                return true;
+              }).toList();
+
               return SliverList(
                 delegate: SliverChildListDelegate([
                   if (state.active != null) ...[
@@ -98,26 +106,41 @@ class _AiInterviewListPageState extends ConsumerState<AiInterviewListPage> {
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
                     ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: 'Tìm theo mode, domain...',
-                      ),
-                      onChanged: ref
-                          .read(aiInterviewListNotifierProvider.notifier)
-                          .setSearch,
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _searchCtrl,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.search),
+                            hintText: 'Tìm theo mode, domain...',
+                          ),
+                          onChanged: ref
+                              .read(aiInterviewListNotifierProvider.notifier)
+                              .setSearch,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(value: 'ALL', label: Text('Tất cả')),
+                            ButtonSegment(value: 'COMPLETED', label: Text('Hoàn thành')),
+                            ButtonSegment(value: 'IN_PROGRESS', label: Text('Đang làm')),
+                          ],
+                          selected: {_statusFilter},
+                          onSelectionChanged: (val) =>
+                              setState(() => _statusFilter = val.first),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  if (state.history.isEmpty)
+                  if (filteredHistory.isEmpty)
                     const AppEmptyState(
-                      title: 'Chưa có buổi phỏng vấn nào',
-                      subtitle: 'Bắt đầu buổi phỏng vấn AI đầu tiên của bạn',
+                      title: 'Chưa có buổi phỏng vấn phù hợp',
+                      subtitle: 'Hãy điều chỉnh bộ lọc hoặc bắt đầu buổi phỏng vấn mới',
                       icon: Icons.psychology_outlined,
                     )
                   else
-                    ...state.history.asMap().entries.map((entry) {
+                    ...filteredHistory.asMap().entries.map((entry) {
                       final s = entry.value;
                       return _HistoryCard(
                         session: s,
