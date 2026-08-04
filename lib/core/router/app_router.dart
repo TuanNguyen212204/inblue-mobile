@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inblue_mobile/core/router/route_paths.dart';
+import 'package:inblue_mobile/features/ai_interview/domain/entities/practice_set.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_list_page.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_result_page.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_room_page.dart';
 import 'package:inblue_mobile/features/ai_interview/presentation/pages/ai_interview_setup_page.dart';
+import 'package:inblue_mobile/features/ai_interview/presentation/pages/practice_set_detail_page.dart';
+import 'package:inblue_mobile/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:inblue_mobile/features/auth/presentation/pages/login_page.dart';
+import 'package:inblue_mobile/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:inblue_mobile/core/router/router_refresh_provider.dart';
 import 'package:inblue_mobile/features/auth/presentation/providers/auth_state_provider.dart'
     show isAuthenticatedProvider;
@@ -18,7 +22,10 @@ import 'package:inblue_mobile/features/mock_interview/presentation/pages/mock_se
 import 'package:inblue_mobile/features/mock_interview/presentation/pages/mock_video_room_page.dart';
 import 'package:inblue_mobile/features/mock_interview/presentation/pages/write_mentor_feedback_page.dart';
 import 'package:inblue_mobile/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:inblue_mobile/features/profile/presentation/pages/change_password_page.dart';
 import 'package:inblue_mobile/features/profile/presentation/pages/profile_page.dart';
+
+import 'package:inblue_mobile/features/auth/presentation/pages/signup_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorAiKey = GlobalKey<NavigatorState>(debugLabel: 'shellAi');
@@ -38,11 +45,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final isLoggedIn = ref.read(isAuthenticatedProvider);
-      final isLoginRoute = state.matchedLocation == RoutePaths.login;
       final loc = state.matchedLocation;
+      final isPublicAuthRoute = loc == RoutePaths.login ||
+          loc == RoutePaths.signup ||
+          loc == RoutePaths.forgotPassword ||
+          loc == RoutePaths.resetPassword;
 
-      if (!isLoggedIn && !isLoginRoute) return RoutePaths.login;
-      if (isLoggedIn && (isLoginRoute || loc == RoutePaths.splash)) {
+      if (!isLoggedIn && !isPublicAuthRoute) return RoutePaths.login;
+      if (isLoggedIn && (isPublicAuthRoute || loc == RoutePaths.splash)) {
         return RoutePaths.aiInterviewList;
       }
       return null;
@@ -51,6 +61,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.login,
         builder: (_, __) => const LoginPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.signup,
+        builder: (_, __) => const SignupPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.forgotPassword,
+        builder: (_, __) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.resetPassword,
+        builder: (_, state) => ResetPasswordPage(
+          initialEmail: state.extra as String?,
+        ),
       ),
       GoRoute(
         path: RoutePaths.dashboard,
@@ -121,6 +145,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: RoutePaths.practiceSetDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, state) => PracticeSetDetailPage(
+          practiceSetId: int.parse(state.pathParameters['id']!),
+          initialSet: state.extra as PracticeSet?,
+        ),
+      ),
+      GoRoute(
         path: RoutePaths.mockInterviewSchedule,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (_, __) => const MockSchedulePage(),
@@ -150,6 +182,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => WriteMentorFeedbackPage(
           sessionId: int.parse(state.pathParameters['sessionId']!),
         ),
+      ),
+      GoRoute(
+        path: RoutePaths.changePassword,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, __) => const ChangePasswordPage(),
       ),
     ],
   );
