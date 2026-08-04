@@ -5,14 +5,86 @@ import 'package:inblue_mobile/design_system/components/app_compact_header.dart';
 import 'package:inblue_mobile/design_system/components/app_glass_surface.dart';
 import 'package:inblue_mobile/design_system/tokens/app_spacing.dart';
 import 'package:inblue_mobile/features/dashboard/presentation/widgets/shell_tab_body.dart';
+import 'package:inblue_mobile/features/notifications/domain/entities/app_notification.dart';
 import 'package:inblue_mobile/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:inblue_mobile/shared/presentation/widgets/app_shimmer.dart';
 
-class NotificationsPage extends ConsumerWidget {
+class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends ConsumerState<NotificationsPage> {
+  String _filter = 'ALL'; // ALL | UNREAD | READ
+
+  Future<void> _markAllAsRead() async {
+    try {
+      await ref.read(notificationsRemoteDataSourceProvider).markAllAsRead();
+      ref.invalidate(notificationsProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã đánh dấu tất cả thông báo là đã đọc'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {}
+  }
+
+  void _showDetailModal(BuildContext context, AppNotification item) {
+    if (!item.isRead) {
+      ref.read(notificationsRemoteDataSourceProvider).markAsRead(item.id);
+      ref.invalidate(notificationsProvider);
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.title,
+                    style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              item.formattedTime,
+              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(color: Colors.grey),
+            ),
+            const Divider(height: 24),
+            Text(
+              item.body,
+              style: Theme.of(ctx).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final notificationsAsync = ref.watch(notificationsProvider);
 
     return ShellTabBody(
@@ -20,16 +92,67 @@ class NotificationsPage extends ConsumerWidget {
         onRefresh: () async => ref.invalidate(notificationsProvider),
         child: CustomScrollView(
           slivers: [
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: AppCompactHeader(
                 title: 'Thông báo',
                 subtitle: 'Cập nhật lịch phỏng vấn & thanh toán',
+                actions: [
+                  IconButton(
+                    tooltip: 'Đánh dấu tất cả đã đọc',
+                    icon: const Icon(Icons.done_all_rounded),
+                    onPressed: _markAllAsRead,
+                  ),
+                  IconButton(
+                    tooltip: 'Tải lại',
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: () => ref.invalidate(notificationsProvider),
+                  ),
+                ],
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: notificationsAsync.when(
+                data: (items) {
+                  final total = items.length;
+                  final unread = items.where((i) => !i.isRead).length;
+                  final read = items.where((i) => i.isRead).length;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            _StatBadge(label: 'Tất cả', count: total, color: Colors.blue),
+                            const SizedBox(width: AppSpacing.xs),
+                            _StatBadge(label: 'Chưa đọc', count: unread, color: Colors.orange),
+                            const SizedBox(width: AppSpacing.xs),
+                            _StatBadge(label: 'Đã đọc', count: read, color: Colors.grey),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(value: 'ALL', label: Text('Tất cả')),
+                            ButtonSegment(value: 'UNREAD', label: Text('Chưa đọc')),
+                            ButtonSegment(value: 'READ', label: Text('Đã đọc')),
+                          ],
+                          selected: {_filter},
+                          onSelectionChanged: (val) => setState(() => _filter = val.first),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.sm,
+                0,
                 AppSpacing.md,
                 ShellTabLayout.bottomInset,
               ),
@@ -45,20 +168,20 @@ class NotificationsPage extends ConsumerWidget {
                 ),
                 error: (_, __) => SliverList(
                   delegate: SliverChildListDelegate([
-                    _EmptyNotifications()
-                        .animate()
-                        .fadeIn(duration: 450.ms)
-                        .slideY(begin: 0.05, curve: Curves.easeOutCubic),
+                    _EmptyNotifications(),
                   ]),
                 ),
-                data: (items) {
+                data: (rawItems) {
+                  final items = rawItems.where((i) {
+                    if (_filter == 'UNREAD') return !i.isRead;
+                    if (_filter == 'READ') return i.isRead;
+                    return true;
+                  }).toList();
+
                   if (items.isEmpty) {
                     return SliverList(
                       delegate: SliverChildListDelegate([
-                        _EmptyNotifications()
-                            .animate()
-                            .fadeIn(duration: 450.ms)
-                            .slideY(begin: 0.05, curve: Curves.easeOutCubic),
+                        _EmptyNotifications(),
                       ]),
                     );
                   }
@@ -69,15 +192,18 @@ class NotificationsPage extends ConsumerWidget {
                         final item = items[index];
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: NotificationTile(
-                            title: item.title,
-                            body: item.body,
-                            timeLabel: item.formattedTime,
-                            isRead: item.isRead,
+                          child: InkWell(
+                            onTap: () => _showDetailModal(context, item),
+                            child: NotificationTile(
+                              title: item.title,
+                              body: item.body,
+                              timeLabel: item.formattedTime,
+                              isRead: item.isRead,
+                            ),
                           )
                               .animate()
-                              .fadeIn(duration: 300.ms, delay: (index * 50).ms)
-                              .slideY(begin: 0.05, curve: Curves.easeOutCubic),
+                              .fadeIn(duration: 300.ms, delay: (index * 40).ms)
+                              .slideY(begin: 0.04),
                         );
                       },
                       childCount: items.length,
@@ -85,6 +211,44 @@ class NotificationsPage extends ConsumerWidget {
                   );
                 },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatBadge extends StatelessWidget {
+  const _StatBadge({
+    required this.label,
+    required this.count,
+    required this.color,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '$count',
+              style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16),
+            ),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.8)),
             ),
           ],
         ),

@@ -4,9 +4,14 @@ import 'package:inblue_mobile/features/auth/presentation/providers/auth_notifier
 import 'package:inblue_mobile/features/notifications/data/datasources/notifications_remote_datasource.dart';
 import 'package:inblue_mobile/features/notifications/domain/entities/app_notification.dart';
 
+import 'package:inblue_mobile/core/network/api_client_provider.dart';
+
 final notificationsRemoteDataSourceProvider =
     Provider<NotificationsRemoteDataSource>((ref) {
-  return NotificationsRemoteDataSource(ref.watch(dioProvider));
+  return NotificationsRemoteDataSource(
+    ref.watch(dioProvider),
+    ref.watch(notificationControllerApiProvider),
+  );
 });
 
 final notificationsProvider =
