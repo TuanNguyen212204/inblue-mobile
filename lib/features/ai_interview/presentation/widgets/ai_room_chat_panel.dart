@@ -32,15 +32,16 @@ class AiRoomChatPanel extends ConsumerWidget {
     final disabled = room.phase == AiRoomPhase.submitting ||
         room.phase == AiRoomPhase.evaluating;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface.withValues(
-                  alpha: isDark ? 0.88 : 0.96,
+                  alpha: isDark ? 0.9 : 0.97,
                 ),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
@@ -50,16 +51,16 @@ class AiRoomChatPanel extends ConsumerWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
+                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, -6),
               ),
             ],
           ),
           child: Column(
             children: [
               Container(
-                width: 36,
+                width: 38,
                 height: 4,
                 margin: const EdgeInsets.only(top: AppSpacing.sm),
                 decoration: BoxDecoration(
@@ -70,7 +71,10 @@ class AiRoomChatPanel extends ConsumerWidget {
               Expanded(
                 child: ListView(
                   controller: scrollCtrl,
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
                   children: [
                     ...room.messages.map(
                       (m) => AiChatBubble(
@@ -82,11 +86,11 @@ class AiRoomChatPanel extends ConsumerWidget {
                     ),
                     if (room.phase == AiRoomPhase.submitting)
                       const AiTypingIndicator(
-                        label: 'AI đang xử lý câu trả lời vừa gửi',
+                        label: 'AI đang phân tích câu trả lời...',
                       ),
                     if (room.phase == AiRoomPhase.evaluating)
                       const AiTypingIndicator(
-                        label: 'AI đang đánh giá phản hồi của bạn',
+                        label: 'AI đang tổng hợp đánh giá...',
                       ),
                   ],
                 ),
@@ -104,21 +108,21 @@ class AiRoomChatPanel extends ConsumerWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Đang chờ AI...',
+                        'Đang chờ AI phản hồi...',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomInset),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(16),
+                        .withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12),
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
                     ),
                   ),
                   child: Row(
@@ -145,10 +149,12 @@ class AiRoomChatPanel extends ConsumerWidget {
                           room.isListening
                               ? Icons.stop_circle_rounded
                               : Icons.mic_rounded,
+                          size: 24,
                           color: room.isListening
                               ? Theme.of(context).colorScheme.error
                               : Theme.of(context).colorScheme.primary,
                         ),
+                        tooltip: room.isListening ? 'Dừng & Gửi' : 'Ghi âm trả lời',
                       ),
                       Expanded(
                         child: TextField(
@@ -156,8 +162,9 @@ class AiRoomChatPanel extends ConsumerWidget {
                           enabled: !disabled,
                           maxLines: 3,
                           minLines: 1,
+                          style: Theme.of(context).textTheme.bodyMedium,
                           decoration: const InputDecoration(
-                            hintText: 'Nhập câu trả lời...',
+                            hintText: 'Nhập câu trả lời của bạn...',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -168,8 +175,10 @@ class AiRoomChatPanel extends ConsumerWidget {
                         onPressed: disabled ? null : () => notifier.submitAnswer(),
                         icon: Icon(
                           Icons.send_rounded,
+                          size: 22,
                           color: Theme.of(context).colorScheme.primary,
                         ),
+                        tooltip: 'Gửi câu trả lời',
                       ),
                     ],
                   ),
